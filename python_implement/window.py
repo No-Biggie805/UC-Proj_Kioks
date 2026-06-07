@@ -1,51 +1,12 @@
-# import tkinker as tk
-# from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-# from matplotlib.figure import Figure
-
-# class RealTimeApp:
-#     def __init__(self, root, data_engine):
-#         self.root = root
-#         self.engine = data_engine
-#         self.running = False
-        
-#         # Criação do gráfico (usamos self. para que o plot seja acessível)
-#         self.fig = Figure(figsize=(6,4), dpi=100)
-#         self.ax = self.fig.add_subplot(111)
-#         self.line, = self.ax.plot([], [], 'r-')
-#         self.ax.set_ylim(0, 100)
-        
-#         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
-#         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-        
-#         # Botões
-#         tk.Button(root, text="Start", command=self.start_plot).pack(side=tk.LEFT)
-#         tk.Button(root, text="Stop", command=self.stop_plot).pack(side=tk.LEFT)
-
-#     def start_plot(self):
-#         self.running = True
-#         self.update_plot()
-
-#     def stop_plot(self):
-#         self.running = False
-
-#     def update_plot(self):
-#         if self.running:
-#             x, y = self.engine.fetch_new_data()
-#             self.line.set_data(range(len(y)), y)
-#             self.ax.set_xlim(0, len(y))
-#             self.canvas.draw()
-#             self.root.after(200, self.update_plot)
-
 #1 - Mudar a gui para com que faca um plot
-
 #Edição 1: Problemas conspiram ser o facto de dar erro na variável y que antes não existia (penso eu no código do motor), isto porque o gráfico de linha precisa de memória. Histórico de dados necessário.
 #Outro problema no código feito da parte do matplotlib, foi uma virgula e o argumento do figsize(concertado)
 
-
-
+#2 - Adicionar botões Start/Stop
 
 import tkinter as tk
 from TF02_pro import MotorDados
+from StopWatch import StopWatch
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
@@ -53,7 +14,7 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("Monitor LiDAR TF02-Pro")
-        
+
         # Iniciamos o motor
         self.sensor = MotorDados()
 
@@ -71,21 +32,30 @@ class App:
         self.ax.set_title("Estabilidade do sinal LiDAR", fontsize=14)
         self.ax.set_ylabel("Distancia (cm)")
         
+        #carregar os elemntos do StopWatch:
+        #Primeiro carrega-se os elementos de topo 
+        self.zona_topo = tk.Frame(self.root)
+        self.zona_topo.pack(side=tk.TOP)
+
+        #Carregar o StopWatch
+        self.meu_relogio = StopWatch(self.zona_topo)
+        self.meu_relogio.pack()
+
+        botao_iniciar = tk.Button(self.root, text="Comecar corrida", command=self.meu_relogio.Start)
+        botao_iniciar.pack()
+
+        botao_parar = tk.Button(self.root, text="Parar", command=self.meu_relogio.Stop)
+        botao_parar.pack()
+
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-        
-        # self.label_titulo = tk.Label(root, text="Distância Atual:", font=("Arial", 20))
-        # self.label_titulo.pack(pady=10)
-
-        # self.label_valor = tk.Label(root, text="--- cm", font=("Arial", 50, "bold"), fg="blue")
-        # self.label_valor.pack(pady=20)
-
+       
         # Agendamos a primeira atualização
         self.update_gui()
 
     def update_gui(self):
         # 1. Vamos buscar o valor ao motor
-        dist = self.sensor.get_distancia()
+        dist = self.sensor.get_distancia() #buscar do motor os dados da funcao get_distancia()
 
         #2. Guardar o valor na nossa lista "memoria"
         self.y_data.append(dist)

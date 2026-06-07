@@ -60,35 +60,36 @@
 #-------------x------------------x--------------------
 # versão bruta, para tirar dados do sensor.
 
-import serial
+# import serial
 
-porta = '/dev/ttyUSB0'
-baud_rate = 115200
+# porta = '/dev/ttyUSB0'
+# baud_rate = 115200
 
-print(f"A abrir a porta {porta} em modo BRUTO...")
+# print(f"A abrir a porta {porta} em modo BRUTO...")
 
-try:
-    ser = serial.Serial(porta, baud_rate, timeout=1)
-    print("Porta aberta! À escuta de rigorosamente qualquer coisa...")
+# try:
+#     ser = serial.Serial(porta, baud_rate, timeout=1)
+#     print("Porta aberta! À escuta de rigorosamente qualquer coisa...")
     
-    while True:
-        # Se houver algum byte à espera na gaveta
-        if ser.in_waiting > 0:
-            # Lê tudo o que lá está
-            dados_brutos = ser.read(ser.in_waiting)
+#     while True:
+#         # Se houver algum byte à espera na gaveta
+#         if ser.in_waiting > 0:
+#             # Lê tudo o que lá está
+#             dados_brutos = ser.read(ser.in_waiting)
             
-            # Imprime no ecrã em formato Hexadecimal 
-            hex_formatado = dados_brutos.hex(' ').upper()
-            print(f"Recebido: [ {hex_formatado} ]")
+#             # Imprime no ecrã em formato Hexadecimal 
+#             hex_formatado = dados_brutos.hex(' ').upper()
+#             print(f"Recebido: [ {hex_formatado} ]")
 
-except KeyboardInterrupt:
-    print("\nFechado pelo utilizador.")
-except Exception as e:
-    print(f"Deu erro: {e}")
-finally:
-    if 'ser' in locals() and ser.is_open:
-        ser.close()
+# except KeyboardInterrupt:
+#     print("\nFechado pelo utilizador.")
+# except Exception as e:
+#     print(f"Deu erro: {e}")
+# finally:
+#     if 'ser' in locals() and ser.is_open:
+#         ser.close()
 
+#-----------------x------------------------------------
 # import serial 
 # import time
 
@@ -157,7 +158,3 @@ finally:
 #     if "ser" in locals() and ser.is_open:
 #         ser.close()
 #         print("Porta fechada com segurança")
-
-
-
-

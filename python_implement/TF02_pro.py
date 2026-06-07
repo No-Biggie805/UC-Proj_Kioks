@@ -10,33 +10,29 @@ import serial
 class MotorDados:
     def __init__(self, porta = '/dev/ttyUSB0', baud_rate = 115200):
         print(f"A ligar ao sensor na porta {porta} a {baud_rate} bps..")
-    # try: 
         self.ser = serial.Serial(porta,baud_rate,timeout=0.1)
         self.distancia = 0
-        # self.forca = 0
-        # self.temperatura = 0
+        self.forca = 0
+        self.temperatura = 0
         self.running = True
 
         #Tarefa de fundo para nao travar a GUI
         self.thread = threading.Thread(target=self._read_loop, daemon=True)
         self.thread.start()
 
-        # #o sensor fazer o reset como era antes o arduino mal o python abrir a porta ?
-        # #Esperar 2s para ele acordar e depois aceitar
-        # #fora o "lixo" que ele enviou a meio do processo.
-        # time.sleep(1)
-        # ser.reset_input_buffer()
-
     def _read_loop(self):
         print("ligação estabelecida! À procura do movimento...")
 
-        buffer_dados = b''
+        buffer_dados = b'' #b'' para guardar bytes puros (HEX)
 
         while self.running:
             if self.ser.in_waiting > 0:
-                buffer_dados += self.ser.read(self.ser.in_waiting)
+                buffer_dados += self.ser.read(self.ser.in_waiting) #preencher o buffer no canal do serial
             #só tentamos agora se tivermos apenas 9 bytes
+            #caso não tiver os 9 bytes passa ao seguinte ignorando qualquer buffer que tenha menos 
             while len(buffer_dados) >= 9:
+                #começou agora a processar os dados no raspberry pi
+
                 #procurar onde está o cabeçalho
                 inicio = buffer_dados.find(b'\x59\x59')
 
@@ -56,28 +52,13 @@ class MotorDados:
                     # A Logica da extracao 
                     #-------------------------------
                     self.distancia = pacote[2] + (256 * pacote[3])
-                    # forca = pacote[4] + (256 * pacote[5])
-                    # temperatura = (pacote[6] + (256 * pacote[7]))/8 - 256 #Temp = temp/8 - 256; onde temp é composto do que está dentro do valor total da palavra de 16bits 
+                    self.forca = pacote[4] + (256 * pacote[5])
+                    self.temperatura = (pacote[6] + (256 * pacote[7]))/8 - 256 #Temp = temp/8 - 256; onde temp é composto do que está dentro do valor total da palavra de 16bits 
+        time.sleep(0.01) #Pequena pausa antes de voltar ao serial, isto evita maior uso da CPU em ciclos vazios
 
-        time.sleep(0.01) #Pequena pausa para não fritar a CPU
-
-                    # #A logica do quiosque
-                    # if distancia < 150:
-                    #     alerta = "⚠️ ALGUÉM PERTO! (Ligar Ecrã)"
-                    # else:
-                    #     alerta = "✅ Limpo."
     def get_distancia(self):
         return self.distancia
-
-    #                 print(f"Distancia da pessoa: {distancia:4}cm | forca do sinal: {forca:5} | temperatura do sensor: {temperatura} | {alerta}")
-    # except KeyboardInterrupt:
-    #     print("\nScript terminado por end-user")
-    # except Exception as e:
-    #     print(f"Erro fatal: {e}")
-    # finally:
-    #     if "ser" in locals() and ser.is_open:
-    #         ser.close()
-    #         print("Porta fechada com segurança")
-    
-
-                    
+    def get_forca(self):
+        return self.forca
+    def get_temperatura(self):
+        return self.temperatura
