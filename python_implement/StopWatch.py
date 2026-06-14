@@ -23,7 +23,7 @@ class StopWatch(Frame):
     def _update(self):
         self._elapsedtime = time.time() - self._start
         self._setTime(self._elapsedtime)
-        self._timer = self.after(50, self._update)
+        self._timer = self.after(100, self._update)
     
     def _setTime(self, elap):
         minutes = int(elap/60)
@@ -31,6 +31,9 @@ class StopWatch(Frame):
         seconds = int(elap - minutes * 60.0)
         hseconds = int((elap - minutes * 60.0 - seconds) * 100)
         self.timestr.set('%02d:%02d:%02d:%02d' % (hours, minutes, seconds, hseconds)) 
+
+    def _getTempo(self):
+        return self._elapsedtime, self._setTime
     
     #implementar um start 
     def Start(self):
@@ -52,6 +55,11 @@ class StopWatch(Frame):
         self._start = time.time()
         self._elapsedtime = 0.0
         self._setTime(self._elapsedtime)
+
+
+
+
+
 
     #crear a função, aqui chamamos todas as funções e tem o paper de criar, manter a janela aberta
 # def main():
