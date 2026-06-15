@@ -69,9 +69,7 @@ class App:
         self.frame_resultados = tk.Frame(self.root, bg="red")
         self.frame_resultados.pack(side=tk.LEFT, fill=tk.Y) 
         
-        #Devido ao bbox precisar de ser chamado após um draw completo e síncrono, 
-        #o draw como era assíncrono foi juntamente passado para o loop tornando-se síncrono o que previne de resultar num background vazio ou incompleto.
-        self.canvas.draw_idle()
+        #canvas.draw() removido pois o mesmo aparenta conseguir fazer um draw automático e tem tempo para fazer o blit sem problemas
 
         # Agendamos a primeira atualização
         self.update_gui()
@@ -103,7 +101,7 @@ class App:
         #5: Resenhamos o ecrã
         # self.canvas.draw_idle()
 
-        #Em vez de canvas.draw
+        #Em vez de canvas.draw, mesmo no __init__
         self.canvas.restore_region(self.bg) #restaurar o fundo
         self.ax.draw_artist(self.line) #Desenhar só a linha
         self.canvas.blit(self.ax.bbox) #enviar para o ecrã
@@ -121,7 +119,7 @@ class App:
       
     def _reinit_blit(self):
         self.line.set_data([], []) #limpa a linha temporariamente
-        self.canvas.draw_idle()
+        self.canvas.draw()
         self.bg = self.canvas.copy_from_bbox(self.ax.bbox)
         #restaura os dados reais da linha (mesmo padrão que foi feito no update_gui)
         self.line.set_data(range(len(self.y_data)), self.y_data)
