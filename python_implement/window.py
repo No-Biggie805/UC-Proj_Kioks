@@ -66,9 +66,24 @@ class App:
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         
         #Criação do frame para as tentativas
-        self.frame_resultados = tk.Frame(self.root, bg="red")
-        self.frame_resultados.pack(side=tk.LEFT, fill=tk.Y) 
+        self.frame_resultados = tk.Frame(self.frame_central, bg="red")
+        self.frame_resultados.pack(side=tk.RIGHT, fill=tk.Y) 
+
+        self.labels_tentativas = []
+        self.botoes_graficos = []
+        for i in range(3): 
+            label = tk.Label(self.frame_resultados, text=f"Tentativa {i+1}, ---")
+            label.pack(pady=(8,0), padx=8, anchor="w")
+            self.labels_tentativas.append(label)
         
+        for i in range(3):
+            btn = tk.Button(self.frame_resultados, text=f"Ver grafico {'{'}i+1{'}'}", 
+                            command=lambda n=i: self.ver_grafico_tentativa(n), state=tk.DISABLED)
+            btn.pack(pady=(2,0), padx=8, anchor="w")
+            self.botoes_graficos.append(btn) #registar o que está no widget à classe?
+        
+        self.botao_guardar = tk.Button(self.frame_resultados, text="Guardar Tentativa", state=tk.DISABLED)
+        self.botao_guardar.pack(pady=16, padx=8, fill=tk.X)
         #canvas.draw() removido pois o mesmo aparenta conseguir fazer um draw automático e tem tempo para fazer o blit sem problemas
 
         # Agendamos a primeira atualização
