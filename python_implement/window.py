@@ -74,10 +74,9 @@ class App:
                 
         #Memória do gráfico
         self.y_data = []
-        
+        self.t_data = [] #lista do tempo
         self.v_data = []
         self.a_data = []
-        self.ultimo_tempo = None
         
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.frame_grafico)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
@@ -123,28 +122,29 @@ class App:
 
         #2. Guardar o valor na nossa lista da distancia
         self._guardar_com_limite(self.y_data, dist)
+        #guardar na lista do tempo
+        self._guardar_com_limite(self.t_data, agora)
 
-        if self.ultimo_tempo is not None and len(self.y_data) >=2:
+        N = 5
+        if len(self.y_data) >= N: #Verificar se tem valores no tempo e terem passados mais de 5 passos, senão ignora
                 #Calcular o delta_distancia e a velocidade:
-                self.delta_dist = self.y_data[-1] - self.y_data[-2] #Aqui lê-se ao contrário da perpectiva da lista, -2 é o vi, o -1 o vf
-                self.delta_t = agora - self.ultimo_tempo
+                self.delta_dist = self.y_data[-1] - self.y_data[-N] #Aqui lê-se ao contrário da perpectiva da lista, -2 é o vi, o -1 o vf
+                self.delta_t = self.t_data[-1] - self.t_data[-N]
                 vel = self.delta_dist / self.delta_t 
                 self._guardar_com_limite(self.v_data, vel)
         else:
                 self.v_data.append(0) #caso especial: primeira leitura
 
-        if self.ultimo_tempo is not None and len(self.v_data) >=2:
+        if len(self.v_data) >= N:
 
-                self.delta_t = agora - self.ultimo_tempo
+                self.delta_t = self.t_data[-1] - self.t_data[-N]
                 #calcular a variação da velocidade
-                self.delta_v = self.v_data[-1] - self.v_data[-2]
+                self.delta_v = self.v_data[-1] - self.v_data[-N]
                 #Agora trabalhar na aceleração:
                 acel = self.delta_v / self.delta_t
                 self._guardar_com_limite(self.a_data, acel)
         else:
                 self.a_data.append(0)
-
-        self.ultimo_tempo = agora
 
         # blit: lembra-te que agora tens 3 eixos. Vais precisar de restore_region
         # e draw_artist para CADA eixo, ou um bg que cubra a figura toda?
