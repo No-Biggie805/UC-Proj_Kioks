@@ -51,9 +51,7 @@ class App:
         # Criamos os elementos visuais
         self.fig = Figure(figsize=(6,4), dpi=100) #concertado o argumento figsize, e o dpi=100 para nao ficar pixalizado
         self.fig.patch.set_facecolor('#1e1e2e') #fundo fora do gráfico
-        # self.ax = self.fig.add_subplot(111)
-        # self.line, = self.ax.plot([], [], 'r-', linewidth=2) #!!, ax.plot consegue desenhar varias linhas ao mesmo tempo, para isso por agora se poe uma virgula no depois da variavel, o que faz com a lista entregue diretamente à variável
-        
+           
         # DEPOIS (esqueleto):
         self.max_pontos = 50
 
@@ -67,16 +65,24 @@ class App:
         self.line_acel, = self.ax_acel.plot([], [], 'b-', linewidth=2)
         self._configurar_eixo(self.ax_acel, "Aceleração (cm/s²)", (-300, 300))
 
-        # Pergunta para ti: cada self.ax_X precisa dos mesmos set_facecolor / set_ylim /
-        # tick_params / set_ylabel que já tinhas no self.ax original?
-        # Sugestão: experimenta criar uma função auxiliar tipo self._configurar_eixo(ax, ylabel, ylim)
-        # para não repetires o mesmo bloco 3 vezes.
-                
         #Memória do gráfico
         self.y_data = []
         self.t_data = [] #lista do tempo
         self.v_data = []
         self.a_data = []
+
+        #criar uma lista com um dicionário por eixo:
+        #Explicar elementos do dict:    
+            #ax - Isto é a moldura do gráfico, define limites, cor de fundo, labels, ticks. O mesmo é configurado uma vez: em _configurar_eixo e raramente muda depois
+            #line - Isto é a linha 2D, os dados desenhados dentro do canvas, esta será sempre atualizada
+            #bg - Existe para tirar um snapshot do background, assim não precisando de desenhar tudo sem ser o que precisa
+                #o que precisa de ser atualizado, isto acontece antes e depois da janela ter feito um resize 
+            #data - lista de dados tirados do sensor e matematicamente calculados 
+        self.eixos = [
+            {"ax": self.ax_dist, "line": self.line_dist, "bg": None, "data": self.y_data},
+            {"ax": self.ax_vel, "line": self.line_vel, "bg": None, "data": self.v_data},
+            {"ax": self.ax_acel, "line": self.line_acel, "bg": None, "data": self.a_data},
+        ]
         
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.frame_grafico)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
@@ -100,7 +106,6 @@ class App:
         
         self.botao_guardar = tk.Button(self.frame_resultados, text="Guardar Tentativa", state=tk.DISABLED)
         self.botao_guardar.pack(pady=16, padx=8, fill=tk.X)
-        #canvas.draw() removido pois o mesmo aparenta conseguir fazer um draw automático e tem tempo para fazer o blit sem problemas
 
         # Agendamos a primeira atualização
         self.update_gui()
@@ -112,7 +117,8 @@ class App:
     def update_gui(self):
 
         #check, se o atributo bg não existir para prevenir a falha.
-        if not hasattr(self, 'bg_dist') or self.bg_dist is None or not hasattr(self, 'bg_vel') or self.bg_vel is None or not hasattr(self, 'bg_acel') or self.bg_acel is None:
+        #Agora não necessita verificar se atributo existe ou não, pois foi criado no __init__ pelo dict, mas apenas 
+        if any(eixo["bg"] is None for eixo in self.eixos):
             self.root.after(50, self.update_gui)
             return
         #Nota o blit também vai ter de lidar com três <line> objects e capturar o <bg> de cada eixo separadamente!
@@ -146,56 +152,36 @@ class App:
         else:
                 self.a_data.append(0)
 
-        # blit: lembra-te que agora tens 3 eixos. Vais precisar de restore_region
-        # e draw_artist para CADA eixo, ou um bg que cubra a figura toda?
-        # Isto é decisão tua — pensa no que já fizeste em _init_blit.
-        self.line_dist.set_data(range(len(self.y_data)), self.y_data)
-        self.line_vel.set_data(range(len(self.v_data)), self.v_data)
-        self.line_acel.set_data(range(len(self.a_data)), self.a_data)
-
-        #Em vez de canvas.draw, mesmo no __init__
-        self.canvas.restore_region(self.bg_dist) #restaurar o fundo
-        self.canvas.restore_region(self.bg_vel) #restaurar o fundo
-        self.canvas.restore_region(self.bg_acel) #restaurar o fundo
-
-        self.ax_dist.draw_artist(self.line_dist) #Desenhar só a linha
-        self.ax_vel.draw_artist(self.line_vel) #Desenhar só a linha
-        self.ax_acel.draw_artist(self.line_acel) #Desenhar só a linha
-
-        self.canvas.blit(self.ax_dist.bbox) #enviar para o ecrã
-        self.canvas.blit(self.ax_vel.bbox) #enviar para o ecrã
-        self.canvas.blit(self.ax_acel.bbox) #enviar para o ecrã
+        #IMPLEMENTAÇÃO SEM BOILER-PLATE:
+        for eixo in self.eixos:
+            eixo["line"].set_data(range(len(eixo["data"])),eixo["data"])
+            self.canvas.restore_region(eixo["bg"])
+            eixo["ax"].draw_artist(eixo["line"])
+            self.canvas.blit(eixo["ax"].bbox)
 
         self.canvas.flush_events() #processar eventos pendentes
 
         self.root.after(100, self.update_gui)
     
     def _init_blit(self):
-        self.bg_dist = self.canvas.copy_from_bbox(self.ax_dist.bbox)
-        self.bg_vel = self.canvas.copy_from_bbox(self.ax_vel.bbox)
-        self.bg_acel = self.canvas.copy_from_bbox(self.ax_acel.bbox) 
+        for eixo in self.eixos:
+            eixo["bg"] = self.canvas.copy_from_bbox(eixo["ax"].bbox) #criar snapshot do background (continuamente)
 
     def _on_resize(self, event):
-        self.bg_dist = None 
-        self.bg_vel = None 
-        self.bg_acel = None 
+        for eixo in self.eixos:
+            eixo["bg"] = None #Limpar a informação do background
         self.root.after(100, self._reinit_blit)
 
     def _reinit_blit(self): #para o reinit_blit vou já me adiantar com o update:
-        self.line_dist.set_data([], []) #limpa a linha temporariamente
-        self.line_vel.set_data([], []) 
-        self.line_acel.set_data([], []) 
-
+        for eixo in self.eixos:
+            eixo["line"].set_data([],[]) #Limpar a lista temporariamente
         self.canvas.draw()
-
-        self.bg_dist = self.canvas.copy_from_bbox(self.ax_dist.bbox)
-        self.bg_vel = self.canvas.copy_from_bbox(self.ax_vel.bbox)
-        self.bg_acel = self.canvas.copy_from_bbox(self.ax_acel.bbox)
-
-        #restaura os dados reais da linha (mesmo padrão que foi feito no update_gui)
-        self.line_dist.set_data(range(len(self.y_data)), self.y_data) 
-        self.line_vel.set_data(range(len(self.v_data)), self.v_data) 
-        self.line_acel.set_data(range(len(self.a_data)), self.a_data) 
+        for eixo in self.eixos:
+            eixo["bg"] = self.canvas.copy_from_bbox(eixo["ax"].bbox)
+        for eixo in self.eixos:
+            eixo["line"].set_data(range(len(eixo["data"])),eixo["data"])
+        #Resultado final, fica sem linhas que se transponham, que era o problema inicial quando se fez o blit.
+        
     # def on_stop(self):
 
     def _configurar_eixo(self, ax, ylabel, ylim):
