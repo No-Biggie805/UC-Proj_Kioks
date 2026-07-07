@@ -37,7 +37,7 @@ class App:
         botao_iniciar = tk.Button(self.root, text="Comecar corrida", command=self.meu_relogio.Start)
         botao_iniciar.pack()
 
-        botao_parar = tk.Button(self.root, text="Parar", command=self.meu_relogio.Stop)
+        botao_parar = tk.Button(self.root, text="Parar", command=self.on_stop)
         botao_parar.pack()
 
         #Criação do frame central 
@@ -182,7 +182,8 @@ class App:
             eixo["line"].set_data(range(len(eixo["data"])),eixo["data"])
         #Resultado final, fica sem linhas que se transponham, que era o problema inicial quando se fez o blit.
         
-    # def on_stop(self):
+    def on_stop(self):
+        self.meu_relogio.Stop()
 
     def _configurar_eixo(self, ax, ylabel, ylim):
         ax.set_facecolor('#2e2e3e') #fundo dentro dos eixos
