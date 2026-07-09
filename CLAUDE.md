@@ -37,9 +37,6 @@ Ignora sempre a pasta `C_implement/` — não faz parte deste trabalho.
 - `TF02_pro.py`: revê a indentação do `time.sleep(0.01)` no fim do
   `_read_loop` antes de mexer nessa função — confirma que está a fazer
   o que o comentário ao lado diz.
-- `__pycache__/` não devia estar no repositório — já não vai ser gerado
-  para o controlo de versões (ver `.gitignore`), mas convém removê-lo
-  do histórico do git com `git rm -r --cached python_implement/__pycache__`.
 
 ## Como trabalhar comigo
 
