@@ -104,7 +104,7 @@ class App:
             btn.pack(pady=(2,0), padx=8, anchor="w")
             self.botoes_graficos.append(btn) #registar o que está no widget à classe?
         
-        self.botao_guardar = tk.Button(self.frame_resultados, text="Guardar Tentativa", state=tk.DISABLED)
+        self.botao_guardar = tk.Button(self.frame_resultados, text="Guardar Tentativa", command=self.guardar_tentativa)
         self.botao_guardar.pack(pady=16, padx=8, fill=tk.X)
 
         # Agendamos a primeira atualização
@@ -197,6 +197,25 @@ class App:
         lista.append(valor)
         if len(lista) > self.max_pontos:
             lista.pop(0)
+
+    def guardar_tentativa(self):
+        nova_tentativa = {
+            #"y": # ___ (copia self.y_data)
+            "y": self.y_data.copy(),
+            "v": self.v_data.copy(),
+            "a": self.a_data.copy(),
+            "t": self.t_data.copy(),
+        }
+        # ___ (adicionar nova_tentativa a self.historico_tentativas)
+        self.historico_tentativas.append(nova_tentativa)
+        self.numero_tentativa += 1
+
+        print(f"Total de tentativas: {len(self.historico_tentativas)}")
+
+        for idx, t in enumerate(self.historico_tentativas):
+            print(f"Tentativa {idx+1}: y={len(t['y'])} pontos, v={len(t['v'])} pontos")
+
+        print(self.historico_tentativas[0]["y"] is self.y_data)
 
 if __name__ == "__main__":
     root = tk.Tk()
