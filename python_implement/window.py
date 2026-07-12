@@ -24,6 +24,7 @@ class App:
         #adicionar lista do historico e inicializar a variavel numero
         self.historico_tentativas = []
         self.numero_tentativa = 1
+        self.a_ver_tentativa = False #flag booleano confirma se tentativa foi ou não vista
 
         #carregar os elemntos do StopWatch:
         #Primeiro carrega-se os elementos de topo 
@@ -107,6 +108,9 @@ class App:
         self.botao_guardar = tk.Button(self.frame_resultados, text="Guardar Tentativa", command=self.guardar_tentativa)
         self.botao_guardar.pack(pady=16, padx=8, fill=tk.X)
 
+        self.voltar_live = tk.Button(self.frame_resultados, text="Voltar ao live", command=tk.DISABLED)
+        self.voltar_live.pack(pady=16, padx=8, fill=tk.X)
+
         # Agendamos a primeira atualização
         self.update_gui()
 
@@ -115,12 +119,18 @@ class App:
         self.root.after(100, self._init_blit)
 
     def update_gui(self):
+        if self.a_ver_tentativa: #flag que previne o resto de correr se for verdadeiro 
+            self.root.after(100, self.update_gui)
+            print("ver tentativa deu verdadeiro")
+            return
+        # print("ver tentativa deu falso")
 
         #check, se o atributo bg não existir para prevenir a falha.
         #Agora não necessita verificar se atributo existe ou não, pois foi criado no __init__ pelo dict, mas apenas 
         if any(eixo["bg"] is None for eixo in self.eixos):
             self.root.after(50, self.update_gui)
             return
+
         #Nota o blit também vai ter de lidar com três <line> objects e capturar o <bg> de cada eixo separadamente!
         # 1. Vamos buscar o valor ao motor
         dist = self.sensor.get_distancia() #buscar do motor os dados da funcao get_distancia()
