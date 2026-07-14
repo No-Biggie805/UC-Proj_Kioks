@@ -46,7 +46,9 @@ Ignora sempre a pasta `C_implement/` — não faz parte deste trabalho.
   deixa-me escrever a função.
 - Se encontrares um bug ou algo que pareça não intencional (como
   indentação suspeita), diz-me em vez de corrigir sem avisar.
-- Não tenho hardware sempre disponível para testar — quando fizer
-  sentido, sugere testes que não dependam do sensor físico (ex.: dar
-  bytes falsos ao parser do `TF02_pro.py` em vez de precisar da porta
-  série real).
+- Tenho o sensor LiDAR TF02-Pro comigo e disponível para testar
+  diretamente (até ao final da data limite do projeto). Testes com
+  hardware real são a opção por omissão — não assumas que preciso de
+  simular ou mockar o sensor a menos que assumimos em casos mais específicos
+  (por exemplo, para testar um caso extremo difícil de reproduzir
+  fisicamente). 
