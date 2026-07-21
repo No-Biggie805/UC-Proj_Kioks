@@ -94,21 +94,24 @@ class App:
 
         self.labels_tentativas = []
         self.botoes_graficos = []
+
+        #Listar as tentativas
         for i in range(3): 
             label = tk.Label(self.frame_resultados, text=f"Tentativa {i+1}, ---")
             label.pack(pady=(8,0), padx=8, anchor="w")
             self.labels_tentativas.append(label)
         
+        #Listar os botões das tentativas
         for i in range(3):
             btn = tk.Button(self.frame_resultados, text=f"Ver grafico {'{'}i+1{'}'}", 
-                            command=lambda n=i: self.ver_grafico_tentativa(n), state=tk.DISABLED)
+                            command=lambda n=i: self.ver_grafico_tentativa(n), state=tk.NORMAL)
             btn.pack(pady=(2,0), padx=8, anchor="w")
             self.botoes_graficos.append(btn) #registar o que está no widget à classe?
         
         self.botao_guardar = tk.Button(self.frame_resultados, text="Guardar Tentativa", command=self.guardar_tentativa)
         self.botao_guardar.pack(pady=16, padx=8, fill=tk.X)
 
-        self.voltar_live = tk.Button(self.frame_resultados, text="Voltar ao live", command=tk.DISABLED)
+        self.voltar_live = tk.Button(self.frame_resultados, text="Voltar ao live", state=tk.DISABLED)
         self.voltar_live.pack(pady=16, padx=8, fill=tk.X)
 
         # Agendamos a primeira atualização
@@ -209,23 +212,54 @@ class App:
             lista.pop(0)
 
     def guardar_tentativa(self):
-        nova_tentativa = {
-            #"y": # ___ (copia self.y_data)
-            "y": self.y_data.copy(),
-            "v": self.v_data.copy(),
-            "a": self.a_data.copy(),
-            "t": self.t_data.copy(),
-        }
-        # ___ (adicionar nova_tentativa a self.historico_tentativas)
-        self.historico_tentativas.append(nova_tentativa)
-        self.numero_tentativa += 1
+        if len(self.historico_tentativas) <= 3:
+            nova_tentativa = {
+                #"y": # ___ (copia self.y_data)
+                "y": self.y_data.copy(),
+                "v": self.v_data.copy(),
+                "a": self.a_data.copy(),
+                "t": self.t_data.copy(),
+            }
+            # ___ (adicionar nova_tentativa a self.historico_tentativas)
+            self.historico_tentativas.append(nova_tentativa)
+            self.numero_tentativa += 1
 
-        print(f"Total de tentativas: {len(self.historico_tentativas)}")
+            print(f"Total de tentativas: {len(self.historico_tentativas)}")
 
-        for idx, t in enumerate(self.historico_tentativas):
-            print(f"Tentativa {idx+1}: y={len(t['y'])} pontos, v={len(t['v'])} pontos")
+            for idx, t in enumerate(self.historico_tentativas):
+                print(f"Tentativa {idx+1}: y={len(t['y'])} pontos, v={len(t['v'])} pontos")
 
-        print(self.historico_tentativas[0]["y"] is self.y_data)
+            print(self.historico_tentativas[0]["y"] is self.y_data) #Devolver falso, pois o que está no historico não faz parte da lista
+        else:
+            print("Passou do limite do numero de tentativas que atualmente pode guardar")
+    
+    def ver_grafico_tentativa(self, n):
+        #1. Validar n; Se não for válido, avisa e sai já
+        if(n > len(self.historico_tentativas)):
+            print("n inválido, a retornar..")
+            return
+        #2. Ativar a flag que pausa o update_gui() ao vivo
+        self.a_ver_tentativa = True
+
+        #3. Buscar a "caixa" certa do historico
+        tentativa = self.historico_tentativas[n]
+
+        #4. Escrever os dados guardados nas line de cada eixo 
+        self.line_dist.set_data(range(len(tentativa["y"])), tentativa["y"])
+        self.line_vel.set_data(range(len(tentativa["v"])), tentativa["v"])
+        self.line_acel.set_data(range(len(tentativa["a"])), tentativa["a"])
+        
+        #5. Ajustar os limites do eixo x consoatne o tamanho real da tentativa
+        self.ax_dist.set_xlim(0, len(tentativa["y"]))
+        self.ax_vel.set_xlim(0, len(tentativa["y"]))
+        self.ax_acel.set_xlim(0, len(tentativa["y"]))
+
+        #6 Redenhar — decide se faz sentido aqui, dado que não é o loop de 100ms
+        self.canvas.draw()
+
+        #7. Atualizar o botão "Voltar ao live:"
+        self.voltar_live.config(state=tk.NORMAL)
+
 
 if __name__ == "__main__":
     root = tk.Tk()
