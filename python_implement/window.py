@@ -111,7 +111,7 @@ class App:
         self.botao_guardar = tk.Button(self.frame_resultados, text="Guardar Tentativa", command=self.guardar_tentativa)
         self.botao_guardar.pack(pady=16, padx=8, fill=tk.X)
 
-        self.voltar_live = tk.Button(self.frame_resultados, text="Voltar ao live", state=tk.DISABLED)
+        self.voltar_live = tk.Button(self.frame_resultados, text="Voltar ao live", command=self.voltar_ao_live)
         self.voltar_live.pack(pady=16, padx=8, fill=tk.X)
 
         # Agendamos a primeira atualização
@@ -259,6 +259,22 @@ class App:
 
         #7. Atualizar o botão "Voltar ao live:"
         self.voltar_live.config(state=tk.NORMAL)
+    
+    def voltar_ao_live(self):
+        #1. Desligar a flag
+        self.a_ver_tentativa = False
+
+        #2. Repor o xlim "de sempre" em cada eixo
+        self.ax_dist.set_xlim(0, self.max_pontos)
+        self.ax_vel.set_xlim(0, self.max_pontos)
+        self.ax_acel.set_xlim(0, self.max_pontos)
+
+        #3. Invalidar o bg antigo e pedir para ser reconstruído
+        #   (pensa em qual função já faz isto — não precisas de reescrever a lógica)
+        self.root.after(100, self._reinit_blit)
+
+        #4. Atualizar o botão (inverso do que fizeste no passo 7 anterior)
+        self.voltar_ao_live.config(state=tk.DISABLED)
 
 
 if __name__ == "__main__":
