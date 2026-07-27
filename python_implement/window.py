@@ -244,15 +244,18 @@ class App:
         #3. Buscar a "caixa" certa do historico
         tentativa = self.historico_tentativas[n]
 
+        # Adicionar uma lista tempos que vai servir para ajustar os eixos para tempo em vez de pontos fixos
+        tempos = [x - tentativa["t"][0] for x in tentativa["t"]]
+        
         #4. Escrever os dados guardados nas line de cada eixo 
-        self.line_dist.set_data(range(len(tentativa["y"])), tentativa["y"])
-        self.line_vel.set_data(range(len(tentativa["v"])), tentativa["v"])
-        self.line_acel.set_data(range(len(tentativa["a"])), tentativa["a"])
+        self.line_dist.set_data(tempos, tentativa["y"])
+        self.line_vel.set_data(tempos, tentativa["v"])
+        self.line_acel.set_data(tempos, tentativa["a"])
         
         #5. Ajustar os limites do eixo x consoatne o tamanho real da tentativa
-        self.ax_dist.set_xlim(0, len(tentativa["y"]))
-        self.ax_vel.set_xlim(0, len(tentativa["y"]))
-        self.ax_acel.set_xlim(0, len(tentativa["y"]))
+        self.ax_dist.set_xlim(0, tempos[-1])
+        self.ax_vel.set_xlim(0, tempos[-1])
+        self.ax_acel.set_xlim(0, tempos[-1])
 
         #6 Redenhar — decide se faz sentido aqui, dado que não é o loop de 100ms
         self.canvas.draw()
@@ -274,8 +277,7 @@ class App:
         self.root.after(100, self._reinit_blit)
 
         #4. Atualizar o botão (inverso do que fizeste no passo 7 anterior)
-        self.voltar_ao_live.config(state=tk.DISABLED)
-
+        self.voltar_live.config(state=tk.DISABLED)
 
 if __name__ == "__main__":
     root = tk.Tk()
