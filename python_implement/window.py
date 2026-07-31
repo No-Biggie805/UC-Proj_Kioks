@@ -35,11 +35,14 @@ class App:
         self.meu_relogio = StopWatch(self.zona_topo)
         self.meu_relogio.pack()
 
-        botao_iniciar = tk.Button(self.root, text="Comecar corrida", command=self.meu_relogio.Start)
+        botao_iniciar = tk.Button(self.root, text="Comecar corrida", command=self.on_start)
         botao_iniciar.pack()
 
         botao_parar = tk.Button(self.root, text="Parar", command=self.on_stop)
         botao_parar.pack()
+
+        botao_reset = tk.Button(self.root, text="Reset", command=self.meu_relogio.Reset)
+        botao_reset.pack()
 
         #Criação do frame central 
         self.frame_central = tk.Frame(self.root, bg="green")
@@ -71,6 +74,12 @@ class App:
         self.t_data = [] #lista do tempo
         self.v_data = []
         self.a_data = []
+
+        #Listas paralelas para listar no ver_tentativa:
+        self.y_data_completo = []
+        self.t_data_completo = [] 
+        self.v_data_completo = []
+        self.a_data_completo = []
 
         #criar uma lista com um dicionário por eixo:
         #Explicar elementos do dict:    
@@ -141,8 +150,10 @@ class App:
 
         #2. Guardar o valor na nossa lista da distancia
         self._guardar_com_limite(self.y_data, dist)
+        self._guardar_com_limite_completo(self.y_data_completo, dist)
         #guardar na lista do tempo
         self._guardar_com_limite(self.t_data, agora)
+        self._guardar_com_limite_completo(self.t_data_completo, agora)
 
         N = 5
         if len(self.y_data) >= N: #Verificar se tem valores no tempo e terem passados mais de 5 passos, senão ignora
@@ -151,8 +162,10 @@ class App:
                 self.delta_t = self.t_data[-1] - self.t_data[-N]
                 vel = self.delta_dist / self.delta_t 
                 self._guardar_com_limite(self.v_data, vel)
+                self._guardar_com_limite_completo(self.v_data_completo, vel)
         else:
                 self.v_data.append(0) #caso especial: primeira leitura
+                self.v_data_completo.append(0) #caso especial: primeira leitura
 
         if len(self.v_data) >= N:
 
@@ -162,8 +175,10 @@ class App:
                 #Agora trabalhar na aceleração:
                 acel = self.delta_v / self.delta_t
                 self._guardar_com_limite(self.a_data, acel)
+                self._guardar_com_limite_completo(self.a_data_completo, acel)
         else:
                 self.a_data.append(0)
+                self.a_data_completo.append(0)
 
         #IMPLEMENTAÇÃO SEM BOILER-PLATE:
         for eixo in self.eixos:
@@ -194,9 +209,18 @@ class App:
         for eixo in self.eixos:
             eixo["line"].set_data(range(len(eixo["data"])),eixo["data"])
         #Resultado final, fica sem linhas que se transponham, que era o problema inicial quando se fez o blit.
-        
+    def on_start(self):
+        #limpar a lista logo depois de começar
+        self.y_data_completo.clear()
+        self.v_data_completo.clear()
+        self.a_data_completo.clear()
+        self.t_data_completo.clear()
+
+        self.meu_relogio.Start() 
+
     def on_stop(self):
         self.meu_relogio.Stop()
+        self.guardar_tentativa()
 
     def _configurar_eixo(self, ax, ylabel, ylim):
         ax.set_facecolor('#2e2e3e') #fundo dentro dos eixos
@@ -211,18 +235,27 @@ class App:
         if len(lista) > self.max_pontos:
             lista.pop(0)
 
+    def _guardar_com_limite_completo(self, lista, valor):
+        lista.append(valor)
+
     def guardar_tentativa(self):
         if len(self.historico_tentativas) <= 3:
             nova_tentativa = {
                 #"y": # ___ (copia self.y_data)
-                "y": self.y_data.copy(),
-                "v": self.v_data.copy(),
-                "a": self.a_data.copy(),
-                "t": self.t_data.copy(),
+                "y": self.y_data_completo.copy(),
+                "v": self.v_data_completo.copy(),
+                "a": self.a_data_completo.copy(),
+                "t": self.t_data_completo.copy(),
             }
             # ___ (adicionar nova_tentativa a self.historico_tentativas)
             self.historico_tentativas.append(nova_tentativa)
             self.numero_tentativa += 1
+
+            #Fazer o clear depois do append ser feito
+            self.y_data_completo.clear()
+            self.v_data_completo.clear()
+            self.a_data_completo.clear()
+            self.t_data_completo.clear()
 
             print(f"Total de tentativas: {len(self.historico_tentativas)}")
 
