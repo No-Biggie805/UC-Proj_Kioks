@@ -210,12 +210,7 @@ class App:
             eixo["line"].set_data(range(len(eixo["data"])),eixo["data"])
         #Resultado final, fica sem linhas que se transponham, que era o problema inicial quando se fez o blit.
     def on_start(self):
-        #limpar a lista logo depois de começar
-        self.y_data_completo.clear()
-        self.v_data_completo.clear()
-        self.a_data_completo.clear()
-        self.t_data_completo.clear()
-
+        self._reset_listas_completas() 
         self.meu_relogio.Start() 
 
     def on_stop(self):
@@ -238,6 +233,13 @@ class App:
     def _guardar_com_limite_completo(self, lista, valor):
         lista.append(valor)
 
+    def _reset_listas_completas(self):
+        #Fazer o clear depois do append ser feito
+        self.y_data_completo.clear()
+        self.v_data_completo.clear()
+        self.a_data_completo.clear()
+        self.t_data_completo.clear()
+
     def guardar_tentativa(self):
         if len(self.historico_tentativas) <= 3:
             nova_tentativa = {
@@ -251,12 +253,8 @@ class App:
             self.historico_tentativas.append(nova_tentativa)
             self.numero_tentativa += 1
 
-            #Fazer o clear depois do append ser feito
-            self.y_data_completo.clear()
-            self.v_data_completo.clear()
-            self.a_data_completo.clear()
-            self.t_data_completo.clear()
-
+            #Fazer o reset das listas, mudado para função pois reduz boilerplate
+            self._reset_listas_completas() 
             print(f"Total de tentativas: {len(self.historico_tentativas)}")
 
             for idx, t in enumerate(self.historico_tentativas):
@@ -268,7 +266,7 @@ class App:
     
     def ver_grafico_tentativa(self, n):
         #1. Validar n; Se não for válido, avisa e sai já
-        if(n > len(self.historico_tentativas)):
+        if(n >= len(self.historico_tentativas)):
             print("n inválido, a retornar..")
             return
         #2. Ativar a flag que pausa o update_gui() ao vivo
