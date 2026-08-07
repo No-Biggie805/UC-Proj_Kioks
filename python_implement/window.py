@@ -209,14 +209,7 @@ class App:
         for eixo in self.eixos:
             eixo["line"].set_data(range(len(eixo["data"])),eixo["data"])
         #Resultado final, fica sem linhas que se transponham, que era o problema inicial quando se fez o blit.
-    def on_start(self):
-        self._reset_listas_completas() 
-        self.meu_relogio.Start() 
-
-    def on_stop(self):
-        self.meu_relogio.Stop()
-        self.guardar_tentativa()
-
+    
     def _configurar_eixo(self, ax, ylabel, ylim):
         ax.set_facecolor('#2e2e3e') #fundo dentro dos eixos
         ax.set_ylim(*ylim)
@@ -293,7 +286,16 @@ class App:
 
         #7. Atualizar o botão "Voltar ao live:"
         self.voltar_live.config(state=tk.NORMAL)
-    
+
+    def on_start(self):
+        self._reset_listas_completas() 
+        self.meu_relogio.Start() 
+
+    def on_stop(self):
+        if self.meu_relogio.is_running():
+            self.meu_relogio.Stop()
+            self.guardar_tentativa()
+
     def voltar_ao_live(self):
         #1. Desligar a flag
         self.a_ver_tentativa = False

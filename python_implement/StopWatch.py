@@ -34,13 +34,16 @@ class StopWatch(Frame):
 
     def _getTempo(self):
         return self._elapsedtime, self._setTime
-    
+
+    def is_running(self):
+        return self._running
+
     #implementar um start 
     def Start(self):
         if not self._running:
             self._start = time.time() - self._elapsedtime
             self._update()
-            self._running = 1
+            self._running = True 
     
     #implementar o stop
     def Stop(self):
@@ -48,13 +51,15 @@ class StopWatch(Frame):
             self.after_cancel(self._timer)
             self._elapsedtime = time.time() - self._start
             self._setTime(self._elapsedtime)
-            self._running = 0
+            self._running = False
     
     #criar um reset
     def Reset(self):
         self._start = time.time()
         self._elapsedtime = 0.0
         self._setTime(self._elapsedtime)
+
+   
 
 
 
