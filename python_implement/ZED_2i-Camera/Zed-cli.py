@@ -15,6 +15,7 @@ qualquer contexto gráfico internamente:
 import threading
 import time
 import math
+import csv
 import pyzed.sl as sl
 
 """
@@ -31,7 +32,8 @@ class GravadorZed:
 
     def __init__(self, camera_resolution=sl.RESOLUTION.HD720, fps=60):
         self.zed = sl.Camera() 
-        
+        self.lock = threading.Lock()
+
         # 2. Configurar parâmetros de abertura
         self.init_params = sl.InitParameters()
         self.init_params.camera_resolution = sl.RESOLUTION.HD720   # confirmaste 720@60fps no ZED_Explorer
@@ -78,6 +80,7 @@ class GravadorZed:
                 grab_status = self.zed.grab(runtime_parameters)
                 if (grab_status == sl.ERROR_CODE.SUCCESS):
                     # 2.1 - buscar medida de profundidade
+                    timestamp = time.time() #Ordem de inicializacao assim que estiver a recolher a profundidade
                     self.zed.retrieve_measure(depth, sl.MEASURE.DEPTH) # Retrieve depth Mat. Depth is aligned on the left image
                     # 2.2 - calcular x e y da profundidade
                     x = round(depth.get_width()/2)
@@ -99,8 +102,9 @@ class GravadorZed:
                         print(f"válido tecnicamente, mas fora do que interessa ao T-Test")
                     #Se valor for válido e normal..
                     else: 
-                        # 3 - print a "cru" dos valores se for um caso normal
-                        self.lista_temp.append(valor)
+                        with self.lock: #Travar o processo do append durante um bocado
+                            # 3 - print a "cru" dos valores se for um caso normal
+                            self.lista_temp.append({"t":timestamp, "y":valor})
                         print(repr(get_status), valor, end='\r')#Devolve o (status e valor da distancia em cru)
                         #Esta impressão acontece de forma a que o valor torne-se fixo no terminal 
                         pass
@@ -110,12 +114,21 @@ class GravadorZed:
                 time.sleep(0.01)
 
     def _guardar_csv_tentativa(self):
-        self.ficheiro = open("tentativa.csv","w")
-        #Escrever os valores da lista?
-        self.ficheiro.write(self.lista_temp)
-        #Limpar a lista
-        self.lista_temp.clear()
-        self.numero_tentativa += 1
+        # tentativa = self.lista_temp
+        tempos = [i["t"] - self.lista_temp[0]["t"] for i in self.lista_temp] #para copiar todos os valores da lista
+        #Resolver typeError e segfault, e porquê?
+        # i["t"]: Por ser uma lista de dicionario, não um dicionário de **listas**
+        # in self.lista_tempos sem ["t"], porque itera o i no dicionario
+        # self.lista_temp[0]["t"], porque a lista não tem chaves e tava a aceder numa chave
+        with self.lock:
+            for leitura in self.lista_temp:
+                with open("tentativa.csv", "w", newline="") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(["timestamp", "distancia"])
+                    writer.writerow([tempos, leitura["y"]])
+                #Limpar a lista
+                self.lista_temp.clear()
+            self.numero_tentativa += 1
         pass
 
     def alternar_gravacao(self):
@@ -125,9 +138,9 @@ class GravadorZed:
             print("A gravar... primir Enter para parar.")
         else:
             self.a_gravar = False
-            print("Thread de gravação Parado")
-            # #chamar o _guardar_csv_tentativa? eu acho que sim pois gravação para e passa a escrita
-            # self._guardar_csv_tentativa()
+            print("Thread de gravação Parado, a iniciar gravação para ficheiro")
+            #chamar o _guardar_csv_tentativa? eu acho que sim pois gravação para e passa a escrita
+            self._guardar_csv_tentativa()
     
     def fechar(self):
         self.running = False
