@@ -115,20 +115,23 @@ class GravadorZed:
 
     def _guardar_csv_tentativa(self):
         # tentativa = self.lista_temp
-        tempos = [i["t"] - self.lista_temp[0]["t"] for i in self.lista_temp] #para copiar todos os valores da lista
-        #Resolver typeError e segfault, e porquê?
-        # i["t"]: Por ser uma lista de dicionario, não um dicionário de **listas**
-        # in self.lista_tempos sem ["t"], porque itera o i no dicionario
-        # self.lista_temp[0]["t"], porque a lista não tem chaves e tava a aceder numa chave
         with self.lock:
-            for leitura in self.lista_temp:
-                with open("tentativa.csv", "w", newline="") as f:
-                    writer = csv.writer(f)
-                    writer.writerow(["timestamp", "distancia"])
-                    writer.writerow([tempos, leitura["y"]])
-                #Limpar a lista
-                self.lista_temp.clear()
-            self.numero_tentativa += 1
+            #Abrir o ficheiro ainda fora do loop, duhh
+            tempos = [i["t"] - self.lista_temp[0]["t"] for i in self.lista_temp] #para copiar todos os valores da lista
+            #Resolver typeError e segfault, e porquê?
+            # i["t"]: Por ser uma lista de dicionario, não um dicionário de **listas**
+            # in self.lista_tempos sem ["t"], porque itera o i no dicionario
+            # self.lista_temp[0]["t"], porque a lista não tem chaves e tava a aceder numa chave
+
+            with open("tentativa.csv", "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["timestamp", "distancia"]) 
+                for i, leitura in enumerate(self.lista_temp):
+                    # tempos = [tempos[i] - self.lista_temp[0]["t"]]
+                    writer.writerow([f"{tempos[i]:.2f}", f"{leitura["y"]:.2f}"])
+            #Limpar a lista
+            self.lista_temp.clear()
+            # self.numero_tentativa += 1
         pass
 
     def alternar_gravacao(self):
