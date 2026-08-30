@@ -40,15 +40,9 @@ Ignora sempre a pasta `C_implement/` — não faz parte deste trabalho.
 
 ## Como trabalhar comigo
 
-- Estou a aprender ativamente — explica a abordagem antes de codificar.
-- Não implementes lógica nova por completo a menos que eu peça
-  explicitamente. Aponta o problema/objetivo, sugere a estrutura, e
-  deixa-me escrever a função.
-- Se encontrares um bug ou algo que pareça não intencional (como
-  indentação suspeita), diz-me em vez de corrigir sem avisar.
-- Tenho o sensor LiDAR TF02-Pro comigo e disponível para testar
-  diretamente (até ao final da data limite do projeto). Testes com
-  hardware real são a opção por omissão — não assumas que preciso de
-  simular ou mockar o sensor a menos que assumimos em casos mais específicos
-  (por exemplo, para testar um caso extremo difícil de reproduzir
-  fisicamente). 
+- **Scaffolding Socrático Claro:** Estou a aprender ativamente e quero desenvolver o meu problem-solving. Não implementes lógicas novas por completo a menos que eu peça. Aponta o problema, sugere a estrutura e faz-me pensar, deixando-me escrever a função.
+- **Tenta reduzir a ambiguidade:** Ao usares o método socrático, sê cristalino. Usa sempre o nome exato das variáveis, métodos (ex: `read`, `in_waiting`, ao pensar em como desenvolver o parsing de dados) e classes. Tenta pf o uso de pronomes vagos ("isto", "esses dois", "ambas") que ofusquem o raciocínio técnico e dificultem os meus apontamentos no papel.
+- **Uma Pergunta de Cada Vez:** Se precisares que eu tome uma decisão arquitetural ou descubra o próximo passo, gostaria mais antes **de uma pergunta direta e fechada** no fim da mensagem. Não mistures múltiplos problemas ou bifurcações na mesma resposta.
+- **Estruturação Visual:** Quando introduzires um conceito novo ou tivermos de escolher entre abordagens (ex: Opção A vs. Opção B), separa as águas com tópicos. Dá-me a ideia geral numa frase antes de detalhares a lógica.
+- **Avisos antes de mexer:** Se encontrares um bug ou algo que pareça não intencional (como indentação suspeita), diz-me em vez de corrigir sem avisar.
+- **Hardware Real:** Tenho o sensor LiDAR TF02-Pro comigo e disponível para testar diretamente (até ao final da data limite do projeto). Testes com hardware real são a opção por omissão — não assumas que preciso de simular ou mockar o sensor a menos que acordemos isso para casos mais específicos (por exemplo, para testar o parsing de dados).
