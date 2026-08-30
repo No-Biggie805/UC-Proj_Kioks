@@ -8,26 +8,3 @@ venv/
 dist/
 build/
 .DS_Store
-python_implement/UC-projKiosks.code-workspace
-python_implement/window-old.py
-python_implement/window.py
-python_implement/Notas/Notas-bloco-5_6_7/bloco7-exercicio.md
-python_implement/Notas/Notas-bloco-5_6_7/bloco-7.md
-python_implement/Notas/Notas-bloco-5_6_7/bloco-5_6-inicio.md
-python_implement/Notas/Notas-5.5/TODOS_BLOCO_5.5.md
-python_implement/Notas/Notas-5.5/Suavização_5.5.md
-python_implement/Notas/Notas-5.5/Notas-Bloco5.5.md
-python_implement/Notas/Notas-5.5/bloco-5.5-frames.md
-python_implement/Notas/Notas-5.5/bloco-5.5-bliting.md
-python_implement/Notas/Notas-5.5/bloco-5.5_boilerplate.md
-python_implement/__pycache__/StopWatch.cpython-313.pyc
-.gitignore
-python_implement/Notas/Notas-bloco-5_6_7/bloco7-ver_grafico_tentativa(n).md
-python_implement/Notas/Notas-bloco-5_6_7/bloco7-voltar_ao_live.md
-python_implement/Notas/Notas-bloco-5_6_7/concertar-bug.md
-python_implement/Notas/Notas-bloco-5_6_7/bloco7-Ajustar_tempo.md
-python_implement/Notas/Notas-API-Zed_2i/Bloco B.md
-python_implement/Notas/Notas-API-Zed_2i/Bloco C - Loop da captura controlado por flag.md
-python_implement/Notas/Notas-API-Zed_2i/sources.md
-python_implement/Notas/Notas-API-Zed_2i/Bloco D, parte 2.md
-python_implement/Notas/Notas-API-Zed_2i/Bloco D.md
