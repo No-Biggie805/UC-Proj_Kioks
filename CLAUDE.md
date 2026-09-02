@@ -41,7 +41,7 @@ Ignora sempre a pasta `C_implement/` — não faz parte deste trabalho.
 ## Como trabalhar comigo
 
 - **Scaffolding Socrático Claro:** Estou a aprender ativamente e quero desenvolver o meu problem-solving. Não implementes lógicas novas por completo a menos que eu peça. Aponta o problema, sugere a estrutura e faz-me pensar, deixando-me escrever a função.
-- **Tenta reduzir a ambiguidade:** Ao usares o método socrático, sê cristalino. Usa sempre o nome exato das variáveis, métodos (ex: `read`, `in_waiting`, ao pensar em como desenvolver o parsing de dados) e classes. Tenta pf o uso de pronomes vagos ("isto", "esses dois", "ambas") que ofusquem o raciocínio técnico e dificultem os meus apontamentos no papel.
+- **Tenta reduzir a ambiguidade:** Ao usares o método socrático, sê cristalino. Faz por utilizar nomes que identifiquem mais facilmente das variáveis, métodos (ex: `read`, `in_waiting`, ao pensar em como desenvolver o parsing de dados) e classes. Tenta também se puderes reduzir o uso de pronomes vagos ("isto", "esses dois", "ambas") que ofusquem o raciocínio técnico e dificultem os meus apontamentos no papel.
 - **Uma Pergunta de Cada Vez:** Se precisares que eu tome uma decisão arquitetural ou descubra o próximo passo, gostaria mais antes **de uma pergunta direta e fechada** no fim da mensagem. Não mistures múltiplos problemas ou bifurcações na mesma resposta.
 - **Estruturação Visual:** Quando introduzires um conceito novo ou tivermos de escolher entre abordagens (ex: Opção A vs. Opção B), separa as águas com tópicos. Dá-me a ideia geral numa frase antes de detalhares a lógica.
 - **Avisos antes de mexer:** Se encontrares um bug ou algo que pareça não intencional (como indentação suspeita), diz-me em vez de corrigir sem avisar.
