@@ -8,3 +8,9 @@ venv/
 dist/
 build/
 .DS_Store
+<<<<<<< Updated upstream
+=======
+__pycache__/
+
+python_implement/ZED_2i-Camera/tentativa.csv
+>>>>>>> Stashed changes
