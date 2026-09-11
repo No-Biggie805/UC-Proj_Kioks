@@ -6,6 +6,8 @@
 
 import tkinter as tk
 import time
+import os
+import csv
 from TF02_pro import MotorDados
 from StopWatch import StopWatch
 
@@ -244,10 +246,15 @@ class App:
             }
             # ___ (adicionar nova_tentativa a self.historico_tentativas)
             self.historico_tentativas.append(nova_tentativa)
+
+            #claude sugere criar o método de export aqui.
+            self._exportar_csv_tentativa(nova_tentativa)
+            
             self.numero_tentativa += 1
 
             #Fazer o reset das listas, mudado para função pois reduz boilerplate
             self._reset_listas_completas() 
+            # ... (resto do método continua igual)
             print(f"Total de tentativas: {len(self.historico_tentativas)}")
 
             for idx, t in enumerate(self.historico_tentativas):
@@ -256,7 +263,7 @@ class App:
             print(self.historico_tentativas[0]["y"] is self.y_data) #Devolver falso, pois o que está no historico não faz parte da lista
         else:
             print("Passou do limite do numero de tentativas que atualmente pode guardar")
-    
+
     def ver_grafico_tentativa(self, n):
         #1. Validar n; Se não for válido, avisa e sai já
         if(n >= len(self.historico_tentativas)):
@@ -286,6 +293,26 @@ class App:
 
         #7. Atualizar o botão "Voltar ao live:"
         self.voltar_live.config(state=tk.NORMAL)
+
+    def _exportar_csv_tentativa(self, tentativa):
+        #1. Garantir que a pasta existe
+        pasta = os.path.join("tentativas_csv") #(os.path.join com "tentativs_csv")
+        os.makedirs(pasta, exist_ok=True)
+
+        #2. Construir o nome do ficheiro
+        data_hoje = time.strftime("%Y-%m-%d")
+        nome_ficheiro = f"tentativa_{self.numero_tentativa}_{data_hoje}.csv"
+        caminho_completo = os.path.join(pasta,nome_ficheiro)
+
+        tempos = [x - tentativa["t"][0] for x in tentativa["t"]]
+
+        with open(caminho_completo, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["timestamp","distancia"])
+            for i in range(len(tentativa["t"])):
+                #fazer aqui o arredondamento (pensar na lógica em como se faz)
+                writer.writerow([f"{tempos[i]:.2f}", f"{tentativa["y"][i]:.2f}"])
+                pass
 
     def on_start(self):
         self._reset_listas_completas() 
