@@ -105,8 +105,7 @@ class GravadorZed:
                         with self.lock: #Travar o processo do append durante um bocado
                             # 3 - print a "cru" dos valores se for um caso normal
                             self.lista_temp.append({"t":timestamp, "y":valor})
-                            velocidade = self._calcular_vel(timestamp,valor)
-                        print(repr(get_status), valor, velocidade, end='\r')#Devolve o (status e valor da distancia em cru)
+                        print(repr(get_status), valor, end='\r')#Devolve o (status e valor da distancia em cru)
                         #Esta impressão acontece de forma a que o valor torne-se fixo no terminal 
                         pass
                 else:
@@ -154,32 +153,6 @@ class GravadorZed:
         print("Câmara fechada com segurança.")
         pass
 
-    def _calcular_vel(self, timestamp, valor):
-        janela = 0.5
-
-        for i in range(len(self.lista_temp) -1, -1, -1):
-            idade = timestamp - self.lista_temp[i]["t"]
-            if idade > janela:
-                break
-        else:
-            return 0
-
-        # ref_rdx = [i+1]
-        # if ref_rdx >= len(self.lista_temp):
-        #     return 0
-
-        #guadar o ponto referência, antes de indice ser "velho"
-        # ponto_referencia = i + 1 # ERRADO: É o índice do dicionário não a posição em si, para depois calcular os dados.
-        ponto_referencia = self.lista_temp[i + 1] #+1 Para somar à posição no momento em que o índice pára
-
-        #calcular o delta_valor (distancia) e o delta_t entre o *agora* e *ponto_referencia*, e devolver delta_valor/delta_t
-        delta_valor = valor - ponto_referencia["y"]
-        delta_tempo = timestamp - ponto_referencia["t"]
-
-        if delta_tempo <= 0:
-            return 0
-        
-        return delta_valor/delta_tempo
 def main():
     
     gravador = GravadorZed()
