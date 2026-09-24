@@ -47,9 +47,10 @@ class GravadorZed:
         # É o padrão usado nos exemplos oficiais da Stereolabs.
         self.status = self.zed.open(self.init_params)
         if self.status > sl.ERROR_CODE.SUCCESS:
-            print(f"Erro ao abrir a câmara: {repr(self.status)}")
+            # print(f"Erro ao abrir a câmara: {repr(self.status)}")
             self.zed.close()
-            return
+            raise ConnectionError(f"Erro ao abrir a câmara: {repr(self.status)}") # Este erro vai parecer um erro de prompt, mas é mesmo de conecção
+            # return
         
         print("Câmara ZED aberta com sucesso!")
         print(f"Versão do SDK: {self.zed.get_sdk_version()}")
@@ -128,10 +129,10 @@ class GravadorZed:
 
             with open("tentativa.csv", "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow(["timestamp", "distancia"]) 
+                writer.writerow(["timestamp", "distancia", "velocidade", "aceleracao"]) 
                 for i, leitura in enumerate(self.lista_temp):
                     # tempos = [tempos[i] - self.lista_temp[0]["t"]]
-                    writer.writerow([f"{tempos[i]:.2f}", f"{leitura["y"]:.2f}"])
+                    writer.writerow([f"{tempos[i]:.2f}", f"{leitura["y"]:.2f}", f"{leitura["v"]:.2f}", f"{leitura["a"]:.2f}"])
             #Limpar a lista
             self.lista_temp.clear()
             # self.numero_tentativa += 1
@@ -210,9 +211,11 @@ class GravadorZed:
         return delta_velocidade/delta_tempo
 
 def main():
-    
-    gravador = GravadorZed()
-
+    try:    
+        gravador = GravadorZed()
+    except ConnectionError as e:
+        print(f"Não foi possivel inicializar: {e}")
+        return
     try:
         while True:
             print("Premir enter para Começar/Parar") 
