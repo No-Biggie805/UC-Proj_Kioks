@@ -104,9 +104,11 @@ class GravadorZed:
                     else: 
                         with self.lock: #Travar o processo do append durante um bocado
                             # 3 - print a "cru" dos valores se for um caso normal
-                            self.lista_temp.append({"t":timestamp, "y":valor})
                             velocidade = self._calcular_vel(timestamp,valor)
-                        print(repr(get_status), valor, velocidade, end='\r')#Devolve o (status e valor da distancia em cru)
+                            aceleracao = self._calcular_acel(timestamp, velocidade)
+                            self.lista_temp.append({"t":timestamp, "y":valor, "v":velocidade, "a":aceleracao})
+                        # print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}", end='\r')#Devolve o (status e valor da distancia em cru)
+                        print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}")#Devolve o (status e valor da distancia em cru)
                         #Esta impressão acontece de forma a que o valor torne-se fixo no terminal 
                         pass
                 else:
@@ -164,13 +166,13 @@ class GravadorZed:
         else:
             return 0
 
-        # ref_rdx = [i+1]
-        # if ref_rdx >= len(self.lista_temp):
-        #     return 0
+        ref_index= i + 1
+        if ref_index >= len(self.lista_temp):
+            return 0
 
         #guadar o ponto referência, antes de indice ser "velho"
         # ponto_referencia = i + 1 # ERRADO: É o índice do dicionário não a posição em si, para depois calcular os dados.
-        ponto_referencia = self.lista_temp[i + 1] #+1 Para somar à posição no momento em que o índice pára
+        ponto_referencia = self.lista_temp[ref_index] #+1 Para somar à posição no momento em que o índice pára
 
         #calcular o delta_valor (distancia) e o delta_t entre o *agora* e *ponto_referencia*, e devolver delta_valor/delta_t
         delta_valor = valor - ponto_referencia["y"]
@@ -180,6 +182,33 @@ class GravadorZed:
             return 0
         
         return delta_valor/delta_tempo
+    
+    def _calcular_acel(self, timestamp, velocidade):
+        #criar outra vez um espaço na janela
+        janela = 0.5
+        for i in range(len(self.lista_temp)):
+            idade = timestamp - janela
+            if idade > janela:
+                break
+        else:
+            return 0
+
+        ref_index= i + 1
+        if ref_index >= len(self.lista_temp):
+            return 0
+
+        #guadar o ponto referência, antes de indice ser "velho"
+        # ponto_referencia = i + 1 # ERRADO: É o índice do dicionário não a posição em si, para depois calcular os dados.
+        ponto_referencia = self.lista_temp[ref_index] #+1 Para somar à posição no momento em que o índice pára
+
+        #calcular o delta_valor (distancia) e o delta_t entre o *agora* e *ponto_referencia*, e devolver delta_valor/delta_t
+        delta_velocidade = velocidade - ponto_referencia["v"]
+        delta_tempo = timestamp - ponto_referencia["t"]
+        if delta_tempo <= 0:
+            return 0
+        
+        return delta_velocidade/delta_tempo
+
 def main():
     
     gravador = GravadorZed()
