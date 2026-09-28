@@ -1,5 +1,6 @@
 import tkinter as tk
 import time
+import csv
 from TF02_pro import MotorDados
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
@@ -11,14 +12,6 @@ class LidarSub:
         # sensor
         self.sensor = MotorDados()
         
-        # #Criação do frame central 
-        # self.frame_central = tk.Frame(self.root, bg="green")
-        # self.frame_central.pack(side=tk.TOP, fill=tk.BOTH, expand=True) ##Criação do frame central 
-
-        # #criação do frame para o grafico
-        # self.frame_grafico = tk.Frame(self.frame_central, bg="#1e1e2e")
-        # self.frame_grafico.pack(side=tk.LEFT, fill=tk.BOTH, expand=True) 
-
         self.max_pontos = 50
 
         self.fig = Figure(figsize=(6, 4), dpi=100)
@@ -39,6 +32,9 @@ class LidarSub:
         self.t_data = []
         self.v_data = []
         self.a_data = []
+
+        self.lista_temp = [] #Lista de dicionários, aqui onde começa o refactor
+        self.a_gravar = False #flag que vai determinar o estado de gravação, para memória
 
         self.eixos = [
             {"ax": self.ax_dist, "line": self.line_dist, "bg":None, "data": self.y_data},
@@ -77,6 +73,7 @@ class LidarSub:
             self._guardar_com_limite(self.v_data, vel)
         else: 
             self.v_data.append(0)
+            vel = 0
 
         if len(self.v_data) >= N:
             self.delta_t = self.t_data[-1] - self.t_data[-N]
@@ -86,6 +83,11 @@ class LidarSub:
             self._guardar_com_limite(self.a_data, acel)
         else:
             self.a_data.append(0)
+            acel = 0
+        
+        # if self.a_gravar:
+        self.lista_temp.append({"y":dist, "t":agora, "v":vel, "a":acel}) #Lista de dicionarios, cada chave y,t,v,a irá guardar um valor respectivo ao que foi calculado no ciclo atual
+        print(f"{dist:.2f} {vel:.2f} {acel:.2f}")#Devolve o (status e valor da distancia em cru)
 
         # IMPLEMENTAÇÃO SEM BOILER-PLATE:
         # redenhar a linha, isto acontece a cada 100ms
@@ -130,10 +132,34 @@ class LidarSub:
         if len(lista) > self.max_pontos:
             lista.pop(0)
 
+    def _guardar_csv_tentativa(self):
+        tempos = [i["t"] - self.lista_temp[0]["t"] for i in self.lista_temp]
+
+        with open("tentativa.csv", "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["timestamp", "distancia", "velocidade", "aceleracao"])
+            for i, leitura in enumerate(self.lista_temp):
+                writer.writerow([f"{tempos[i]:.2f}", f"{leitura["y"]:.2f}",f"{leitura["v"]:.2f}",f"{leitura["a"]:.2f}"])
+            #Limpar a lista
+            self.lista_temp.clear()
     def alternar_gravacao(self):
-        # Aqui aplicar a lógica que foi falado.
-        # Pensar o que faz sentido resetar na função
-        pass
+        if not self.a_gravar:
+            #Ramo de começar a gravar!!
+            #O código vai por agora vai a limpeza na memória assim que premir Enter, portanto antes de começar a gravar novamente, esvazia as listas
+            self.y_data.clear()
+            self.t_data.clear()
+            self.v_data.clear()
+            self.a_data.clear()
+
+            #O lista_temp será também esvaziado, mas quando mudar para como está o GravadorZed será adotado talvez para _guardar_csv_tentativa
+            self.lista_temp.clear() 
+            self.a_gravar = True #flag ativa, começou a gravar (isto vai influenciar quando começar a ter o sistema do input() e _read_loop)
+        else: 
+            #Ramo de parar de gravar
+            self.a_gravar = False 
+            #Futuramente ver aqui do guardar CSV semelhante ao do GravadorZed
+            self._guardar_csv_tentativa()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -141,4 +167,8 @@ if __name__ == "__main__":
     frame_teste = tk.Frame(root)
     frame_teste.pack(fill=tk.BOTH, expand=True)
     app = LidarSub(root, frame_teste)
+
+    root.after(2000, app.alternar_gravacao)  # começar a gravar aos 2s
+    root.after(6000, app.alternar_gravacao)  # parar de gravar aos 6s
+
     root.mainloop()
