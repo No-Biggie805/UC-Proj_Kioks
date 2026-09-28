@@ -11,7 +11,6 @@ import csv
 from TF02_pro import MotorDados
 from StopWatch import StopWatch
 
-
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
