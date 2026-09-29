@@ -187,7 +187,7 @@ class GravadorZed:
     def _calcular_acel(self, timestamp, velocidade):
         #criar outra vez um espaço na janela
         janela = 0.5
-        for i in range(len(self.lista_temp) - 1, -1, -1):
+        for i in range(len(self.lista_temp)):
             idade = timestamp - self.lista_temp[i]["t"]
             if idade > janela:
                 break
