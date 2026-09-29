@@ -28,7 +28,7 @@ Para tal temos isto então estruturado da seguinte forma:
     -alternar_gravacao: toggle ON-OFF do programa a partir do ENTER
     -fechar: função para exit do programa
 """
-class GravadorZed:
+class ZedSub:
 
     def __init__(self, camera_resolution=sl.RESOLUTION.HD720, fps=60):
         self.zed = sl.Camera() 
@@ -94,14 +94,14 @@ class GravadorZed:
                     #Se get_status não suceder
                     # print(repr(get_status), end='\r')
                     if get_status > sl.ERROR_CODE.SUCCESS:
-                        print(f"Leitura inválida no pixel central: {repr(get_status)}")
+                        # print(f"Leitura inválida no pixel central: {repr(get_status)}")
+                        pass
                     #Se valor for nan ou inf
-                    elif math.isnan(valor) or math.isinf(valor):
-                        print(f"Valor é infinito ou nulo")
                     #Se valor for um numero normal, mas irrelevante para T-Test [PROFUNDIDADE_MIN, PROFUNDIDADE_MAX]
-                    elif valor < 0 or valor > 1000: #valores brutos expressos em cm 
-                        print(f"válido tecnicamente, mas fora do que interessa ao T-Test")
-                    #Se valor for válido e normal..
+                    elif math.isnan(valor) or math.isinf(valor) or valor < 0 or valor > 1000:
+                        # print(f"Valor é infinito ou nulo, ou fora de range válido para T-Test")
+                        pass
+                   #Se valor for válido e normal..
                     else: 
                         with self.lock: #Travar o processo do append durante um bocado
                             # 3 - print a "cru" dos valores se for um caso normal
@@ -127,7 +127,7 @@ class GravadorZed:
             # in self.lista_tempos sem ["t"], porque itera o i no dicionario
             # self.lista_temp[0]["t"], porque a lista não tem chaves e tava a aceder numa chave
 
-            with open("tentativa.csv", "w", newline="") as f:
+            with open("tentativa_zed.csv", "w", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(["timestamp", "distancia", "velocidade", "aceleracao"]) 
                 for i, leitura in enumerate(self.lista_temp):
@@ -210,22 +210,22 @@ class GravadorZed:
         
         return delta_velocidade/delta_tempo
 
-def main():
-    try:    
-        gravador = GravadorZed()
-    except ConnectionError as e:
-        print(f"Não foi possivel inicializar: {e}")
-        return
-    try:
-        while True:
-            print("Premir enter para Começar/Parar") 
-            input()
-            gravador.alternar_gravacao()
-    except KeyboardInterrupt:
-        print("\nInterrompido pelo utilizador.")
-    finally:
-        gravador.fechar()
+# def main():
+#     try:    
+#         gravador = GravadorZed()
+#     except ConnectionError as e:
+#         print(f"Não foi possivel inicializar: {e}")
+#         return
+#     try:
+#         while True:
+#             print("Premir enter para Começar/Parar") 
+#             input()
+#             gravador.alternar_gravacao()
+#     except KeyboardInterrupt:
+#         print("\nInterrompido pelo utilizador.")
+#     finally:
+#         gravador.fechar()
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
