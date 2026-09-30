@@ -141,11 +141,13 @@ class GravadorZed:
     def alternar_gravacao(self):
         """Chamado pela thread principal a cada Enter. Faz o toggle."""
         if not self.a_gravar:
+            #Aqui o modo de execução da coleção de dados do sensor é acionada
+            #Se quisesse limpar as listas da memória seria aqui, o mesmo ao menos acontece no _guardar_csv_tentativa
             self.a_gravar = True
             print("A gravar... primir Enter para parar.")
         else:
             self.a_gravar = False
-            print("Thread de gravação Parado, a iniciar gravação para ficheiro")
+            print("Thread de gravação à memória parado, a iniciar gravação para ficheiro")
             #chamar o _guardar_csv_tentativa? eu acho que sim pois gravação para e passa a escrita
             self._guardar_csv_tentativa()
     
