@@ -85,9 +85,9 @@ class LidarSub:
             self.a_data.append(0)
             acel = 0
         
-        # if self.a_gravar:
-        self.lista_temp.append({"y":dist, "t":agora, "v":vel, "a":acel}) #Lista de dicionarios, cada chave y,t,v,a irá guardar um valor respectivo ao que foi calculado no ciclo atual
-        print(f"{dist:.2f} {vel:.2f} {acel:.2f}")#Devolve o (status e valor da distancia em cru)
+        if self.a_gravar:
+            self.lista_temp.append({"y":dist, "t":agora, "v":vel, "a":acel}) #Lista de dicionarios, cada chave y,t,v,a irá guardar um valor respectivo ao que foi calculado no ciclo atual
+            print("Valores LiDAR:"f"{dist:.2f} {vel:.2f} {acel:.2f}")#Devolve o (status e valor da distancia em cru)
 
         # IMPLEMENTAÇÃO SEM BOILER-PLATE:
         # redenhar a linha, isto acontece a cada 100ms
@@ -145,13 +145,13 @@ class LidarSub:
     def alternar_gravacao(self):
         if not self.a_gravar:
             #Ramo de começar a gravar!!
-            #O código vai por agora vai a limpeza na memória assim que premir Enter, portanto antes de começar a gravar novamente, esvazia as listas
+            #O código limpa as listas assim que começar a correr, de seguida passa o correr para recolha de dados a True
             self.y_data.clear()
             self.t_data.clear()
             self.v_data.clear()
             self.a_data.clear()
 
-            #O lista_temp será também esvaziado, mas quando mudar para como está o GravadorZed será adotado talvez para _guardar_csv_tentativa
+            #O lista_temp será também esvaziado, este clear vai proteger o programa quando o for loop do _guardar_csv atinjir exceções
             self.lista_temp.clear() 
             self.a_gravar = True #flag ativa, começou a gravar (isto vai influenciar quando começar a ter o sistema do input() e _read_loop)
         else: 

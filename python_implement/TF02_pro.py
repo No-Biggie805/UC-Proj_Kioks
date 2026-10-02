@@ -62,3 +62,11 @@ class MotorDados:
         return self.forca
     def get_temperatura(self):
         return self.temperatura
+
+    def fechar(self):
+        #1. Pôr a flag do ciclo a falso
+        self.running = False
+        #2. esperar pela thread, com timeout
+        self.thread.join(timeout=1)
+        #3. fechar a porta série
+        self.ser.close()

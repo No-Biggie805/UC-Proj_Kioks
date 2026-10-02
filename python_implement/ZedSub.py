@@ -140,10 +140,13 @@ class ZedSub:
 
     def alternar_gravacao(self):
         """Chamado pela thread principal a cada Enter. Faz o toggle."""
-        if not self.a_gravar:
+        if not self.a_gravar: #condição que aciona quando programa não corre
+            #Esvaziar o lista_temp que protege o código contra exceções assim como o Lidar
+            self.lista_temp.clear() 
             self.a_gravar = True
             print("A gravar... primir Enter para parar.")
-        else:
+        else: #condição que aciona quando o programa estiver a correr
+            #Neste momento o programa vai parar de correr
             self.a_gravar = False
             print("Thread de gravação Parado, a iniciar gravação para ficheiro")
             #chamar o _guardar_csv_tentativa? eu acho que sim pois gravação para e passa a escrita
@@ -151,6 +154,8 @@ class ZedSub:
     
     def fechar(self):
         self.running = False
+        #Fazer o join, espera 1s para a thread fechar
+        self.thread.join(timeout=1)
         #ainda falta ajustar o guardar para quando sai do programa
         self.zed.close()
         # 4. Fechar de forma limpa
@@ -187,7 +192,7 @@ class ZedSub:
     def _calcular_acel(self, timestamp, velocidade):
         #criar outra vez um espaço na janela
         janela = 0.5
-        for i in range(len(self.lista_temp)):
+        for i in range(len(self.lista_temp) -1, -1, -1):
             idade = timestamp - self.lista_temp[i]["t"]
             if idade > janela:
                 break
