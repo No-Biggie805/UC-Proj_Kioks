@@ -54,7 +54,7 @@ class MotorDados:
                     self.distancia = pacote[2] + (256 * pacote[3])
                     self.forca = pacote[4] + (256 * pacote[5])
                     self.temperatura = (pacote[6] + (256 * pacote[7]))/8 - 256 #Temp = temp/8 - 256; onde temp é composto do que está dentro do valor total da palavra de 16bits 
-        time.sleep(0.01) #Pequena pausa antes de voltar ao serial, isto evita maior uso da CPU em ciclos vazios
+            time.sleep(0.01) #Pequena pausa antes de voltar ao serial, isto evita maior uso da CPU em ciclos vazios
 
     def get_distancia(self):
         return self.distancia

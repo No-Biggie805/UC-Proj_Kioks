@@ -24,7 +24,7 @@ class App:
         self.frame_pai.pack(side=tk.TOP, fill=tk.BOTH, expand=True) ##Criação do frame central 
 
         #3. LidarSub
-        self.lidar = LidarSub(root, frame_teste)
+        self.lidar = LidarSub(root, self.frame_pai)
         
         #4. Botão único, (guardar em self.botao para poder mudar o texto depois?)
         self.botao = tk.Button(self.root, text="Começar", command=self._alternar)
@@ -60,8 +60,8 @@ class App:
 if __name__ == "__main__":
     root = tk.Tk()
     root.geometry("400x300")
-    frame_teste = tk.Frame(root)
-    frame_teste.pack(fill=tk.BOTH, expand=True)
+    # frame_pai = tk.Frame(root)
+    # frame_pai.pack(fill=tk.BOTH, expand=True)
     app = App(root)
 
     # root.after(2000, app.alternar_gravacao)  # começar a gravar aos 2s
