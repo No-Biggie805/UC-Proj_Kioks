@@ -79,7 +79,7 @@ class ZedSub:
                 #1 -> grab() -> se sucesso
                 # 2 - grab, busca valores para guardar no mapa e assim..
                 grab_status = self.zed.grab(runtime_parameters)
-                if (grab_status == sl.ERROR_CODE.SUCCESS):
+                if (grab_status == sl.ERROR_CODE.SUCCESS): #Se devolver código de sucesso..
                     # 2.1 - buscar medida de profundidade
                     timestamp = time.time() #Ordem de inicializacao assim que estiver a recolher a profundidade
                     self.zed.retrieve_measure(depth, sl.MEASURE.DEPTH) # Retrieve depth Mat. Depth is aligned on the left image
@@ -101,17 +101,18 @@ class ZedSub:
                     elif math.isnan(valor) or math.isinf(valor) or valor < 0 or valor > 1000:
                         # print(f"Valor é infinito ou nulo, ou fora de range válido para T-Test")
                         pass
-                   #Se valor for válido e normal..
+                    #Se valor for válido e normal..
                     else: 
                         with self.lock: #Travar o processo do append durante um bocado
-                            # 3 - print a "cru" dos valores se for um caso normal
-                            velocidade = self._calcular_vel(timestamp,valor)
-                            aceleracao = self._calcular_acel(timestamp, velocidade)
-                            self.lista_temp.append({"t":timestamp, "y":valor, "v":velocidade, "a":aceleracao})
-                        # print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}", end='\r')#Devolve o (status e valor da distancia em cru)
-                        print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}")#Devolve o (status e valor da distancia em cru)
-                        #Esta impressão acontece de forma a que o valor torne-se fixo no terminal 
-                        pass
+                            if self.a_gravar:
+                                # 3 - print a "cru" dos valores se for um caso normal
+                                velocidade = self._calcular_vel(timestamp,valor)
+                                aceleracao = self._calcular_acel(timestamp, velocidade)
+                                self.lista_temp.append({"t":timestamp, "y":valor, "v":velocidade, "a":aceleracao})
+                    # print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}", end='\r')#Devolve o (status e valor da distancia em cru), numa linha só
+                    print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}")#Devolve o (status e valor da distancia em cru)
+                    #Esta impressão acontece de forma a que o valor torne-se fixo no terminal 
+                    pass
                 else:
                     print(f"Erro no grab(): {repr(grab_status)}")
             else:
