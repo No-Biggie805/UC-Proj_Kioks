@@ -259,7 +259,7 @@ class App:
             for idx, t in enumerate(self.historico_tentativas):
                 print(f"Tentativa {idx+1}: y={len(t['y'])} pontos, v={len(t['v'])} pontos")
 
-            print(self.historico_tentativas[0]["y"] is self.y_data) #Devolver falso, pois o que está no historico não faz parte da lista
+            print(self.historico_tentativas[0]["y"] is self.y_data) #Devolver falso, para comprovar que são listas diferentes
         else:
             print("Passou do limite do numero de tentativas que atualmente pode guardar")
 
