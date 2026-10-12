@@ -13,6 +13,9 @@ def main():
         time.sleep(1) #deixa estabilizar
         zed.alternar_gravacao() # começar a gravar
         time.sleep(5) # mexe a mão à frente da câmera
+        ultimo_frame = zed.get_ultimo_frame() #recolher o ultimo frame do zedsub
+        #imprimir o .shape e .dtype da cópia do frame.
+        print(ultimo_frame.shape, ultimo_frame.dtype)
         zed.alternar_gravacao() #pára e guarda o tentativa_zed.csv
 
     finally:

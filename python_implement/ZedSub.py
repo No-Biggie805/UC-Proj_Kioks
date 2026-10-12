@@ -51,7 +51,7 @@ class ZedSub:
             self.zed.close()
             raise ConnectionError(f"Erro ao abrir a câmara: {repr(self.status)}") # Este erro vai parecer um erro de prompt, mas é mesmo de conecção
             # return
-        
+
         print("Câmara ZED aberta com sucesso!")
         print(f"Versão do SDK: {self.zed.get_sdk_version()}")
 
@@ -62,21 +62,22 @@ class ZedSub:
         self.running = True
         self.a_gravar = False
         self.lista_temp = []
-
+        self.ultimo_frame = None
         self.numero_tentativa = 1
 
         # Tarefa de fundo para não bloquear o input() da thread principal
         self.thread = threading.Thread(target=self._read_loop, daemon=True)
         self.thread.start()
-    
+
     def _read_loop(self):
-        #Definir os paremetros que vao ler a profundidade
+        # Definir os paremetros que vao ler a profundidade
         depth = sl.Mat()
+        image = sl.Mat()
         runtime_parameters = sl.RuntimeParameters()
 
         while self.running:
             if self.a_gravar: #Se for verdadeiro
-                #1 -> grab() -> se sucesso
+                # 1 -> grab() -> se sucesso
                 # 2 - grab, busca valores para guardar no mapa e assim..
                 grab_status = self.zed.grab(runtime_parameters)
                 if (grab_status == sl.ERROR_CODE.SUCCESS): #Se devolver código de sucesso..
@@ -88,20 +89,23 @@ class ZedSub:
                     y = round(depth.get_height()/2)
                     # 3 - print a "cru" dos valores
                     # print(depth.get_value(x,y)) #Devolve o (status (eg:SUCCESS), valor da profundidade aka:distancia)
-                    #TOMAR NOTA QUE O VALOR PODE DEVOLVER <nan> ou <inf> dependendo da superficie em que a camera esteje a apontar..
+                    # TOMAR NOTA QUE O VALOR PODE DEVOLVER <nan> ou <inf> dependendo da superficie em que a camera esteje a apontar..
                     get_status, valor = depth.get_value(x,y) #valores descompactados
 
-                    #Se get_status não suceder
+                    # Agora para buscar a imagem, parecido com o depth
+                    self.zed.retrieve_image(image, sl.VIEW.DEPTH)
+                    frame = image.get_data()
+                    # Se get_status não suceder
                     # print(repr(get_status), end='\r')
                     if get_status > sl.ERROR_CODE.SUCCESS:
                         # print(f"Leitura inválida no pixel central: {repr(get_status)}")
                         pass
-                    #Se valor for nan ou inf
-                    #Se valor for um numero normal, mas irrelevante para T-Test [PROFUNDIDADE_MIN, PROFUNDIDADE_MAX]
+                    # Se valor for nan ou inf
+                    # Se valor for um numero normal, mas irrelevante para T-Test [PROFUNDIDADE_MIN, PROFUNDIDADE_MAX]
                     elif math.isnan(valor) or math.isinf(valor) or valor < 0 or valor > 1000:
                         # print(f"Valor é infinito ou nulo, ou fora de range válido para T-Test")
                         pass
-                    #Se valor for válido e normal..
+                    # Se valor for válido e normal..
                     else: 
                         with self.lock: #Travar o processo do append durante um bocado
                             if self.a_gravar:
@@ -109,9 +113,11 @@ class ZedSub:
                                 velocidade = self._calcular_vel(timestamp,valor)
                                 aceleracao = self._calcular_acel(timestamp, velocidade)
                                 self.lista_temp.append({"t":timestamp, "y":valor, "v":velocidade, "a":aceleracao})
+                                #copiar o frame e guardar num objeto
+                                self.ultimo_frame = frame.copy()
                     # print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}", end='\r')#Devolve o (status e valor da distancia em cru), numa linha só
-                    print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}")#Devolve o (status e valor da distancia em cru)
-                    #Esta impressão acontece de forma a que o valor torne-se fixo no terminal 
+                    print(f"{self.a_gravar} {get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}")#Devolve o (status e valor da distancia em cru)
+                    # Esta impressão acontece de forma a que o valor torne-se fixo no terminal
                     pass
                 else:
                     print(f"Erro no grab(): {repr(grab_status)}")
@@ -121,9 +127,9 @@ class ZedSub:
     def _guardar_csv_tentativa(self):
         # tentativa = self.lista_temp
         with self.lock:
-            #Abrir o ficheiro ainda fora do loop, duhh
+            # Abrir o ficheiro ainda fora do loop, duhh
             tempos = [i["t"] - self.lista_temp[0]["t"] for i in self.lista_temp] #para copiar todos os valores da lista
-            #Resolver typeError e segfault, e porquê?
+            # Resolver typeError e segfault, e porquê?
             # i["t"]: Por ser uma lista de dicionario, não um dicionário de **listas**
             # in self.lista_tempos sem ["t"], porque itera o i no dicionario
             # self.lista_temp[0]["t"], porque a lista não tem chaves e tava a aceder numa chave
@@ -134,7 +140,7 @@ class ZedSub:
                 for i, leitura in enumerate(self.lista_temp):
                     # tempos = [tempos[i] - self.lista_temp[0]["t"]]
                     writer.writerow([f"{tempos[i]:.2f}", f"{leitura["y"]:.2f}", f"{leitura["v"]:.2f}", f"{leitura["a"]:.2f}"])
-            #Limpar a lista
+            # Limpar a lista
             self.lista_temp.clear()
             # self.numero_tentativa += 1
         pass
@@ -142,22 +148,22 @@ class ZedSub:
     def alternar_gravacao(self):
         """Chamado pela thread principal a cada Enter. Faz o toggle."""
         if not self.a_gravar: #condição que aciona quando programa não corre
-            #Esvaziar o lista_temp que protege o código contra exceções assim como o Lidar
+            # Esvaziar o lista_temp que protege o código contra exceções assim como o Lidar
             self.lista_temp.clear() 
             self.a_gravar = True
             print("A gravar... primir Enter para parar.")
         else: #condição que aciona quando o programa estiver a correr
-            #Neste momento o programa vai parar de correr
+            # Neste momento o programa vai parar de correr
             self.a_gravar = False
             print("Thread de gravação Parado, a iniciar gravação para ficheiro")
-            #chamar o _guardar_csv_tentativa? eu acho que sim pois gravação para e passa a escrita
+            # chamar o _guardar_csv_tentativa? eu acho que sim pois gravação para e passa a escrita
             self._guardar_csv_tentativa()
-    
+
     def fechar(self):
         self.running = False
-        #Fazer o join, espera 1s para a thread fechar
+        # Fazer o join, espera 1s para a thread fechar
         self.thread.join(timeout=1)
-        #ainda falta ajustar o guardar para quando sai do programa
+        # ainda falta ajustar o guardar para quando sai do programa
         self.zed.close()
         # 4. Fechar de forma limpa
         print("Câmara fechada com segurança.")
@@ -177,21 +183,21 @@ class ZedSub:
         if ref_index >= len(self.lista_temp):
             return 0
 
-        #guadar o ponto referência, antes de indice ser "velho"
+        # guadar o ponto referência, antes de indice ser "velho"
         # ponto_referencia = i + 1 # ERRADO: É o índice do dicionário não a posição em si, para depois calcular os dados.
         ponto_referencia = self.lista_temp[ref_index] #+1 Para somar à posição no momento em que o índice pára
 
-        #calcular o delta_valor (distancia) e o delta_t entre o *agora* e *ponto_referencia*, e devolver delta_valor/delta_t
+        # calcular o delta_valor (distancia) e o delta_t entre o *agora* e *ponto_referencia*, e devolver delta_valor/delta_t
         delta_valor = valor - ponto_referencia["y"]
         delta_tempo = timestamp - ponto_referencia["t"]
 
         if delta_tempo <= 0:
             return 0
-        
+
         return delta_valor/delta_tempo
-    
+
     def _calcular_acel(self, timestamp, velocidade):
-        #criar outra vez um espaço na janela
+        # criar outra vez um espaço na janela
         janela = 0.5
         for i in range(len(self.lista_temp) -1, -1, -1):
             idade = timestamp - self.lista_temp[i]["t"]
@@ -204,27 +210,30 @@ class ZedSub:
         if ref_index >= len(self.lista_temp):
             return 0
 
-        #guadar o ponto referência, antes de indice ser "velho"
+        # guadar o ponto referência, antes de indice ser "velho"
         # ponto_referencia = i + 1 # ERRADO: É o índice do dicionário não a posição em si, para depois calcular os dados.
         ponto_referencia = self.lista_temp[ref_index] #+1 Para somar à posição no momento em que o índice pára
 
-        #calcular o delta_valor (distancia) e o delta_t entre o *agora* e *ponto_referencia*, e devolver delta_valor/delta_t
+        # calcular o delta_valor (distancia) e o delta_t entre o *agora* e *ponto_referencia*, e devolver delta_valor/delta_t
         delta_velocidade = velocidade - ponto_referencia["v"]
         delta_tempo = timestamp - ponto_referencia["t"]
         if delta_tempo <= 0:
             return 0
-        
+
         return delta_velocidade/delta_tempo
+    
+    def get_ultimo_frame(self):
+        return self.ultimo_frame
 
 # def main():
-#     try:    
+#     try:
 #         gravador = GravadorZed()
 #     except ConnectionError as e:
 #         print(f"Não foi possivel inicializar: {e}")
 #         return
 #     try:
 #         while True:
-#             print("Premir enter para Começar/Parar") 
+#             print("Premir enter para Começar/Parar")
 #             input()
 #             gravador.alternar_gravacao()
 #     except KeyboardInterrupt:
