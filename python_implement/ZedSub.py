@@ -70,7 +70,7 @@ class ZedSub:
         self.thread.start()
 
     def _read_loop(self):
-        # Definir os paremetros que vao ler a profundidade
+        # Definir os paremetros que vao ler a profundidade e a imagem
         depth = sl.Mat()
         image = sl.Mat()
         runtime_parameters = sl.RuntimeParameters()
@@ -95,6 +95,12 @@ class ZedSub:
                     # Agora para buscar a imagem, parecido com o depth
                     self.zed.retrieve_image(image, sl.VIEW.DEPTH)
                     frame = image.get_data()
+                    #incializar a cópia do frame fora do with lock. Mais rápido do que se for dentro.
+                    frame_copia = frame.copy()
+                    #criando um self.lock novo para não congelar com os if/elses todos.
+                    with self.lock:
+                        #guardar o frame com cópia já feita, dentro do lock devido à partilha do array.
+                        self.ultimo_frame = frame_copia
                     # Se get_status não suceder
                     # print(repr(get_status), end='\r')
                     if get_status > sl.ERROR_CODE.SUCCESS:
@@ -106,19 +112,17 @@ class ZedSub:
                         # print(f"Valor é infinito ou nulo, ou fora de range válido para T-Test")
                         pass
                     # Se valor for válido e normal..
-                    else: 
+                    else:  
                         with self.lock: #Travar o processo do append durante um bocado
+                            #O lock vai obrigar que uma thread chegue ao lock, enquanto que outra estiver já dentro de um.
                             if self.a_gravar:
                                 # 3 - print a "cru" dos valores se for um caso normal
                                 velocidade = self._calcular_vel(timestamp,valor)
                                 aceleracao = self._calcular_acel(timestamp, velocidade)
                                 self.lista_temp.append({"t":timestamp, "y":valor, "v":velocidade, "a":aceleracao})
-                                #copiar o frame e guardar num objeto
-                                self.ultimo_frame = frame.copy()
                     # print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}", end='\r')#Devolve o (status e valor da distancia em cru), numa linha só
                     print(f"{self.a_gravar} {get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}")#Devolve o (status e valor da distancia em cru)
                     # Esta impressão acontece de forma a que o valor torne-se fixo no terminal
-                    pass
                 else:
                     print(f"Erro no grab(): {repr(grab_status)}")
             else:
