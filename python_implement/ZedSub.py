@@ -93,7 +93,7 @@ class ZedSub:
                     get_status, valor = depth.get_value(x,y) #valores descompactados
 
                     # Agora para buscar a imagem, parecido com o depth
-                    self.zed.retrieve_image(image, sl.VIEW.DEPTH)
+                    self.zed.retrieve_image(image, sl.VIEW.LEFT)
                     frame = image.get_data()
                     #incializar a cópia do frame fora do with lock. Mais rápido do que se for dentro.
                     frame_copia = frame.copy()
