@@ -19,6 +19,8 @@ class JanelaCamara:
             # ___ 2: array numpy -> Image.fromarray(...) -> ImageTk.PhotoImage(...)
             #2.1: numpy -> PIL
             Pil_obj = Image.fromarray(frame_rgb)
+            #2.1.1: Redimensionamento do PIL
+            Pil_rez = Pil_obj.resize(size=(640,360), resample=Image.Resampling.BOX)
             #2.2: PIL -> Tk
             Tk_obj = ImageTk.PhotoImage(Pil_obj)
             # ___ 3: self.label_imagem.configure(image=...)
