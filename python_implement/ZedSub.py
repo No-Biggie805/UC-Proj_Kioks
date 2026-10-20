@@ -76,6 +76,19 @@ class ZedSub:
         runtime_parameters = sl.RuntimeParameters()
 
         while self.running:
+            grab_status = self.zed.grab(runtime_parameters)
+            if (grab_status == sl.ERROR_CODE.SUCCESS):
+                # Agora para buscar a imagem, parecido com o depth
+                self.zed.retrieve_image(image, sl.VIEW.LEFT)
+                frame = image.get_data()
+                #incializar a cópia do frame fora do with lock. Mais rápido do que se for dentro.
+                frame_copia = frame.copy()
+                #criando um self.lock novo para não congelar com os if/elses todos.
+                with self.lock:
+                    #guardar o frame com cópia já feita, dentro do lock devido à partilha do array.
+                    self.ultimo_frame = frame_copia
+                #Atenção ao time.sleep em baixo, não pode aftetar a imagem!! (Esta mensagem é temporária)
+
             if self.a_gravar: #Se for verdadeiro
                 # 1 -> grab() -> se sucesso
                 # 2 - grab, busca valores para guardar no mapa e assim..
@@ -91,16 +104,6 @@ class ZedSub:
                     # print(depth.get_value(x,y)) #Devolve o (status (eg:SUCCESS), valor da profundidade aka:distancia)
                     # TOMAR NOTA QUE O VALOR PODE DEVOLVER <nan> ou <inf> dependendo da superficie em que a camera esteje a apontar..
                     get_status, valor = depth.get_value(x,y) #valores descompactados
-
-                    # Agora para buscar a imagem, parecido com o depth
-                    self.zed.retrieve_image(image, sl.VIEW.LEFT)
-                    frame = image.get_data()
-                    #incializar a cópia do frame fora do with lock. Mais rápido do que se for dentro.
-                    frame_copia = frame.copy()
-                    #criando um self.lock novo para não congelar com os if/elses todos.
-                    with self.lock:
-                        #guardar o frame com cópia já feita, dentro do lock devido à partilha do array.
-                        self.ultimo_frame = frame_copia
                     # Se get_status não suceder
                     # print(repr(get_status), end='\r')
                     if get_status > sl.ERROR_CODE.SUCCESS:
@@ -120,13 +123,13 @@ class ZedSub:
                                 velocidade = self._calcular_vel(timestamp,valor)
                                 aceleracao = self._calcular_acel(timestamp, velocidade)
                                 self.lista_temp.append({"t":timestamp, "y":valor, "v":velocidade, "a":aceleracao})
-                    # print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}", end='\r')#Devolve o (status e valor da distancia em cru), numa linha só
-                    print(f"{self.a_gravar} {get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}")#Devolve o (status e valor da distancia em cru)
-                    # Esta impressão acontece de forma a que o valor torne-se fixo no terminal
+                                # Esta impressão acontece de forma a que o valor torne-se fixo no terminal
+                                # print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}", end='\r')#Devolve o (status e valor da distancia em cru), numa linha só
+                                print(f"{self.a_gravar} {get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}")#Devolve o (status e valor da distancia em cru)
                 else:
                     print(f"Erro no grab(): {repr(grab_status)}")
-            else:
-                time.sleep(0.01)
+            # else:
+            #     time.sleep(0.01) #Removido pois o loop fora do grab agora +não corre em vazio.
 
     def _guardar_csv_tentativa(self):
         # tentativa = self.lista_temp
