@@ -1,7 +1,7 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 
-class JanelaCamara:
+class JanelaCamera:
     def __init__(self, root, zed_sub):
         self.root = root
         self.zed_sub = zed_sub
@@ -22,7 +22,7 @@ class JanelaCamara:
             #2.1.1: Redimensionamento do PIL
             Pil_rez = Pil_obj.resize(size=(640,360), resample=Image.Resampling.BOX)
             #2.2: PIL -> Tk
-            Tk_obj = ImageTk.PhotoImage(Pil_obj)
+            Tk_obj = ImageTk.PhotoImage(Pil_rez)
             # ___ 3: self.label_imagem.configure(image=...)
             self.label_imagem.configure(image=Tk_obj)
             #        Pergunta-te: a PhotoImage pode existir só como variável local?

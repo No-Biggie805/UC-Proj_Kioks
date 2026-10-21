@@ -1,6 +1,6 @@
 import tkinter as tk
 from ZedSub import ZedSub
-from JanelaCamera import JanelaCamara
+from JanelaCamera import JanelaCamera
 
 def main():
     try:
@@ -10,7 +10,7 @@ def main():
         return
     
     root = tk.Tk()
-    janela = JanelaCamara(root, zed)
+    janela = JanelaCamera(root, zed)
     #1: Pôr o ZedSub a preencher o ultimo_frame
     # zed.get_ultimo_frame() #Retirado pois não vai fazer nada aqui.
     # zed.alternar_gravacao()
