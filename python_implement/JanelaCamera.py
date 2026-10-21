@@ -30,4 +30,9 @@ class JanelaCamera:
             self.tk_ref = Tk_obj
             #Testagem na fase 1b.3, porque precisa de um Tk com mainloop e do ZedSub real.
 
-        self.root.after(33, self._atualizar)
+        #Atualizar e guardar temporizador num atributo
+        self.temporizador = self.root.after(33, self._atualizar)
+
+    def fechar(self):
+        #Fechar recursos da imagem de camera, after_cancel depende do objeto tk.
+        self.root.after_cancel(self.temporizador)

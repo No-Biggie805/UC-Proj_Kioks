@@ -1,6 +1,7 @@
 import tkinter as tk
 from LidarSub import LidarSub
 from ZedSub import ZedSub
+from JanelaCamera import JanelaCamera
 
 """
 Para correr o programa: 
@@ -18,17 +19,24 @@ class App:
         except ConnectionError as e:
             print(f"Não foi possível inicializar: {e}")
             return
-        
+
+        #4. Botão único, (guardar em self.botao para poder mudar o texto depois?)
+        self.botao = tk.Button(self.root, text="Começar", command=self._alternar)
+        self.botao.pack(side=tk.TOP)
+
         #2. Frame que o LidarSub recebe como frame_pai
         self.frame_pai = tk.Frame(self.root, bg="green")
-        self.frame_pai.pack(side=tk.TOP, fill=tk.BOTH, expand=True) ##Criação do frame central 
+        self.frame_pai.pack(side=tk.LEFT, fill=tk.BOTH, expand=True) ##Criação do frame central 
+
+        #b) Criar frame para imagem camera
+        self.frame_cam = tk.Frame(self.root, bg="blue")
+        self.frame_cam.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
         #3. LidarSub
         self.lidar = LidarSub(root, self.frame_pai)
-        
-        #4. Botão único, (guardar em self.botao para poder mudar o texto depois?)
-        self.botao = tk.Button(self.root, text="Começar", command=self._alternar)
-        self.botao.pack()
+
+        #c) Ligar o frame da imagem ao janelaCamara
+        self.janela = JanelaCamera(self.frame_cam, self.zed)
 
         #5. Fecho da janela
         self.root.protocol("WM_DELETE_WINDOW", self._fechar)
@@ -50,10 +58,14 @@ class App:
 
     def _fechar(self):
         # ___
-        #o .fechar do ZedSub vai já fechar as threads do zed e os recursos (zed.close), da camera
+        #1.Fechar visão imagem
+        self.janela.fechar()
+        #2.o .fechar do ZedSub vai já fechar as threads do zed e os recursos (zed.close), da camera
         self.zed.fechar()
+
         #Ver agora para o lidar, threads e recursos
         self.lidar.sensor.fechar()
+
         #Destruir a janela
         self.root.destroy()
 
