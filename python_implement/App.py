@@ -64,7 +64,7 @@ class App:
         self.zed.fechar()
 
         #Ver agora para o lidar, threads e recursos
-        self.lidar.sensor.fechar()
+        self.lidar.fechar()
 
         #Destruir a janela
         self.root.destroy()

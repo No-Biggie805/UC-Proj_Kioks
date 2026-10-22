@@ -54,7 +54,7 @@ class LidarSub:
         # Isto prob. será obseleto, para um formato mais similar ao GravadorZed
 
         if any(eixo["bg"] is None for eixo in self.eixos):
-            self.root.after(50, self.update_gui)
+            self.update_timer_ID = self.root.after(50, self.update_gui)
             return
 
         dist = self.sensor.get_distancia()
@@ -98,7 +98,7 @@ class LidarSub:
             self.canvas.blit(eixo["ax"].bbox)
 
         self.canvas.flush_events()
-        self.root.after(100, self.update_gui)
+        self.update_timer_ID = self.root.after(100, self.update_gui)
 
     def _init_blit(self):
         for eixo in self.eixos:
@@ -159,6 +159,12 @@ class LidarSub:
             self.a_gravar = False 
             #Futuramente ver aqui do guardar CSV semelhante ao do GravadorZed
             self._guardar_csv_tentativa()
+    
+    def fechar(self):
+        #Fechar o identificador
+        self.root.after_cancel(self.update_timer_ID)
+        #fechar o motor de dados
+        self.sensor.fechar()
 
 
 if __name__ == "__main__":
