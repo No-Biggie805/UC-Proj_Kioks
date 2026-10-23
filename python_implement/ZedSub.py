@@ -92,7 +92,7 @@ class ZedSub:
             if self.a_gravar: #Se for verdadeiro
                 # 1 -> grab() -> se sucesso
                 # 2 - grab, busca valores para guardar no mapa e assim..
-                grab_status = self.zed.grab(runtime_parameters)
+                # grab_status = self.zed.grab(runtime_parameters)
                 if (grab_status == sl.ERROR_CODE.SUCCESS): #Se devolver código de sucesso..
                     # 2.1 - buscar medida de profundidade
                     timestamp = time.time() #Ordem de inicializacao assim que estiver a recolher a profundidade
