@@ -1,6 +1,7 @@
 import tkinter as tk
 import time
 import csv
+import threading
 from TF02_pro import MotorDados
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
@@ -8,6 +9,8 @@ from matplotlib.figure import Figure
 class LidarSub:
     def __init__(self, root, frame_pai):
         self.root = root
+        self.lock = threading.Lock()
+        self.running = True
 
         # sensor
         self.sensor = MotorDados()
@@ -33,6 +36,7 @@ class LidarSub:
         self.v_data = []
         self.a_data = []
 
+        self.t0 = None
         self.lista_temp = [] #Lista de dicionários, aqui onde começa o refactor
         self.a_gravar = False #flag que vai determinar o estado de gravação, para memória
 
@@ -47,58 +51,76 @@ class LidarSub:
 
         self.canvas.mpl_connect('resize_event', self._on_resize)
         self.root.after(100, self._init_blit)
-
+        
+        # **Tarefa de fundo** para não bloquear o input() da thread principal
+        self.thread = threading.Thread(target=self._read_loop, daemon=True)
+        self.thread.start()
+        
         self.update_gui()
         
     def update_gui(self):
+        #Thread principal: Este será a que desenha
         # Isto prob. será obseleto, para um formato mais similar ao GravadorZed
 
         if any(eixo["bg"] is None for eixo in self.eixos):
             self.update_timer_ID = self.root.after(50, self.update_gui)
             return
+        """
+        Notas
+        1. self.running no update_gui, não será necessário porque o update_gui não é um ciclo, mas sim uma callback que se reagenda.
+        O Mecanismo de parágem está no <after_cancel(self.update_timer_ID)> do fechar()
+        2.
+        """
+        with self.lock: #Segurar o lock enquanto o update_gui desenha, pois agora objetos serão partilhados entre threads.
+            # IMPLEMENTAÇÃO SEM BOILER-PLATE:
+            # redenhar a linha, isto acontece a cada 100ms
+            for eixo in self.eixos:
+                eixo["line"].set_data(range(len(eixo["data"])),eixo["data"])
+                self.canvas.restore_region(eixo["bg"])
+                eixo["ax"].draw_artist(eixo["line"])
+                self.canvas.blit(eixo["ax"].bbox)
+            self.canvas.flush_events()
+        self.update_timer_ID = self.root.after(100, self.update_gui) #identificador fica de fora, thread de fundo não o lê logo não necessita a proteção
 
-        dist = self.sensor.get_distancia()
-        agora = time.time()
+    def _read_loop(self):
+        #Thread de fundo: Esta será a que recolhe e calcula os valores
+        while self.running:
+            if self.a_gravar:
 
-        # guardar valor da distancia na lista
-        self._guardar_com_limite(self.y_data, dist)
-        # guardar valor do tempo na lista
-        self._guardar_com_limite(self.t_data, agora)
+                dist = self.sensor.get_distancia()
+                agora = time.time()
 
-        N = 5
-        if len(self.y_data) >= N:
-            self.delta_dist = self.y_data[-1] - self.y_data[-N]
-            self.delta_t = self.t_data[-1] - self.t_data[-N]
-            vel = self.delta_dist / self.delta_t
-            self._guardar_com_limite(self.v_data, vel)
-        else: 
-            self.v_data.append(0)
-            vel = 0
+                with self.lock:
+                    # guardar valor da distancia na lista
+                    self._guardar_com_limite(self.y_data, dist)
+                    # guardar valor do tempo na lista
+                    self._guardar_com_limite(self.t_data, agora)
 
-        if len(self.v_data) >= N:
-            self.delta_t = self.t_data[-1] - self.t_data[-N]
-            self.delta_v = self.v_data[-1] - self.v_data[-N]
+                    N = 5
+                    if len(self.y_data) >= N:
+                        self.delta_dist = self.y_data[-1] - self.y_data[-N]
+                        self.delta_t = self.t_data[-1] - self.t_data[-N]
+                        vel = self.delta_dist / self.delta_t
+                        self._guardar_com_limite(self.v_data, vel)
+                    else: 
+                        self.v_data.append(0)
+                        vel = 0
 
-            acel = self.delta_v/self.delta_t
-            self._guardar_com_limite(self.a_data, acel)
-        else:
-            self.a_data.append(0)
-            acel = 0
-        
-        if self.a_gravar:
-            self.lista_temp.append({"y":dist, "t":agora, "v":vel, "a":acel}) #Lista de dicionarios, cada chave y,t,v,a irá guardar um valor respectivo ao que foi calculado no ciclo atual
-            print("Valores LiDAR:"f"{dist:.2f} {vel:.2f} {acel:.2f}")#Devolve o (status e valor da distancia em cru)
+                    if len(self.v_data) >= N:
+                        self.delta_t = self.t_data[-1] - self.t_data[-N]
+                        self.delta_v = self.v_data[-1] - self.v_data[-N]
 
-        # IMPLEMENTAÇÃO SEM BOILER-PLATE:
-        # redenhar a linha, isto acontece a cada 100ms
-        for eixo in self.eixos:
-            eixo["line"].set_data(range(len(eixo["data"])),eixo["data"])
-            self.canvas.restore_region(eixo["bg"])
-            eixo["ax"].draw_artist(eixo["line"])
-            self.canvas.blit(eixo["ax"].bbox)
+                        acel = self.delta_v/self.delta_t
+                        self._guardar_com_limite(self.a_data, acel)
+                    else:
+                        self.a_data.append(0)
+                        acel = 0
 
-        self.canvas.flush_events()
-        self.update_timer_ID = self.root.after(100, self.update_gui)
+                    if self.a_gravar: #semelhante ao zedSub, força o programa a gravar exclusivamente quando a flag for verdadeiro
+                        self.lista_temp.append({"y":dist, "t":agora, "v":vel, "a":acel}) #Lista de dicionarios, cada chave y,t,v,a irá guardar um valor respectivo ao que foi calculado no ciclo atual
+                        print("Valores LiDAR:"f"{dist:.2f} {vel:.2f} {acel:.2f}")#Devolve o (status e valor da distancia em cru)
+            
+            time.sleep(0.01)
 
     def _init_blit(self):
         for eixo in self.eixos:
@@ -133,7 +155,8 @@ class LidarSub:
             lista.pop(0)
 
     def _guardar_csv_tentativa(self):
-        tempos = [i["t"] - self.lista_temp[0]["t"] for i in self.lista_temp]
+        # tempos = [i["t"] - self.lista_temp[0]["t"] for i in self.lista_temp]
+        tempos = [i["t"] - self.t0 for i in self.lista_temp]
 
         with open("tentativa.csv", "w", newline="") as f:
             writer = csv.writer(f)
@@ -153,6 +176,7 @@ class LidarSub:
 
             #O lista_temp será também esvaziado, este clear vai proteger o programa quando o for loop do _guardar_csv atinjir exceções
             self.lista_temp.clear() 
+            self.t0 = time.time() 
             self.a_gravar = True #flag ativa, começou a gravar (isto vai influenciar quando começar a ter o sistema do input() e _read_loop)
         else: 
             #Ramo de parar de gravar

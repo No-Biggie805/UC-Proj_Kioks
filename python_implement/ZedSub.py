@@ -62,6 +62,7 @@ class ZedSub:
         self.running = True
         self.a_gravar = False
         self.lista_temp = []
+        self.t0 = None #inicializar t0 em cima pois o alinhamento é composto por várias partes do programa.
         self.ultimo_frame = None
         self.numero_tentativa = 1
 
@@ -135,7 +136,7 @@ class ZedSub:
         # tentativa = self.lista_temp
         with self.lock:
             # Abrir o ficheiro ainda fora do loop, duhh
-            tempos = [i["t"] - self.lista_temp[0]["t"] for i in self.lista_temp] #para copiar todos os valores da lista
+            tempos = [i["t"] - self.t0 for i in self.lista_temp] #para copiar todos os valores da lista
             # Resolver typeError e segfault, e porquê?
             # i["t"]: Por ser uma lista de dicionario, não um dicionário de **listas**
             # in self.lista_tempos sem ["t"], porque itera o i no dicionario
@@ -157,6 +158,7 @@ class ZedSub:
         if not self.a_gravar: #condição que aciona quando programa não corre
             # Esvaziar o lista_temp que protege o código contra exceções assim como o Lidar
             self.lista_temp.clear() 
+            self.t0 = time.time()
             self.a_gravar = True
             print("A gravar... primir Enter para parar.")
         else: #condição que aciona quando o programa estiver a correr
