@@ -15,7 +15,7 @@ class LidarSub:
         # sensor
         self.sensor = MotorDados()
         
-        self.max_pontos = 50
+        self.max_pontos = 500
 
         self.fig = Figure(figsize=(6, 4), dpi=100)
         self.fig.patch.set_facecolor('#1e1e2e')
@@ -116,25 +116,13 @@ class LidarSub:
                     # guardar valor do tempo na lista
                     self._guardar_com_limite(self.t_data, agora)
 
-                    N = 5
-                    if len(self.y_data) >= N:
-                        self.delta_dist = self.y_data[-1] - self.y_data[-N]
-                        self.delta_t = self.t_data[-1] - self.t_data[-N]
-                        vel = self.delta_dist / self.delta_t
-                        self._guardar_com_limite(self.v_data, vel)
-                    else: 
-                        self.v_data.append(0)
-                        vel = 0
+                    #Calcular a velocidade pela função, depois guardar na lista
+                    vel = self._calcular_vel(agora, dist)
+                    self._guardar_com_limite(self.v_data, vel)
 
-                    if len(self.v_data) >= N:
-                        self.delta_t = self.t_data[-1] - self.t_data[-N]
-                        self.delta_v = self.v_data[-1] - self.v_data[-N]
-
-                        acel = self.delta_v/self.delta_t
-                        self._guardar_com_limite(self.a_data, acel)
-                    else:
-                        self.a_data.append(0)
-                        acel = 0
+                    #Calcular a aceleração pela função, depois guardar na lista
+                    acel = self._calcular_acel(agora, vel)
+                    self._guardar_com_limite(self.a_data, acel)
 
                     if self.a_gravar: #semelhante ao zedSub, força o programa a gravar exclusivamente quando a flag for verdadeiro
                         self.lista_temp.append({"y":dist, "t":agora, "v":vel, "a":acel}) #Lista de dicionarios, cada chave y,t,v,a irá guardar um valor respectivo ao que foi calculado no ciclo atual
@@ -142,6 +130,59 @@ class LidarSub:
                 # print("agora anterior=", agora_anterior)
                 # agora_anterior = agora
             time.sleep(0.01)
+
+    def _calcular_vel(self, timestamp, valor): #Os Objetos tempo e dist, passam a locais?
+        janela = 0.5
+        for i in range(len(self.lista_temp) - 1, -1, -1):
+            idade = timestamp - self.lista_temp[i]["t"]
+            if idade > janela:
+                break
+        else:
+            return 0
+        
+        ref_index= i + 1
+        if ref_index >= len(self.lista_temp):
+            return 0
+
+        # guadar o ponto referência, antes de indice ser "velho"
+        # ponto_referencia = i + 1 # ERRADO: É o índice do dicionário não a posição em si, para depois calcular os dados.
+        ponto_referencia = self.lista_temp[ref_index] #+1 Para somar à posição no momento em que o índice pára
+
+        # calcular o delta_valor (distancia) e o delta_t entre o *agora* e *ponto_referencia*, e devolver delta_valor/delta_t
+        delta_valor = valor - ponto_referencia["y"]
+        delta_tempo = timestamp - ponto_referencia["t"]
+
+        if delta_tempo <= 0:
+            return 0
+
+        return delta_valor/delta_tempo
+
+    # -------x---------        
+    def _calcular_acel(self, timestamp, velocidade):
+        # criar outra vez um espaço na janela
+        janela = 0.5
+        for i in range(len(self.lista_temp) -1, -1, -1):
+            idade = timestamp - self.lista_temp[i]["t"]
+            if idade > janela:
+                break
+        else:
+            return 0
+
+        ref_index= i + 1
+        if ref_index >= len(self.lista_temp):
+            return 0
+
+        # guadar o ponto referência, antes de indice ser "velho"
+        # ponto_referencia = i + 1 # ERRADO: É o índice do dicionário não a posição em si, para depois calcular os dados.
+        ponto_referencia = self.lista_temp[ref_index] #+1 Para somar à posição no momento em que o índice pára
+
+        # calcular o delta_valor (distancia) e o delta_t entre o *agora* e *ponto_referencia*, e devolver delta_valor/delta_t
+        delta_velocidade = velocidade - ponto_referencia["v"]
+        delta_tempo = timestamp - ponto_referencia["t"]
+        if delta_tempo <= 0:
+            return 0
+
+        return delta_velocidade/delta_tempo
 
     def _init_blit(self):
         for eixo in self.eixos:
@@ -181,17 +222,18 @@ class LidarSub:
             lista.pop(0)
 
     def _guardar_csv_tentativa(self):
-        # tempos = [i["t"] - self.lista_temp[0]["t"] for i in self.lista_temp]
-        tempos = [i["t"] - self.t0 for i in self.lista_temp]
+        with self.lock:
+            # tempos = [i["t"] - self.lista_temp[0]["t"] for i in self.lista_temp]
+            tempos = [i["t"] - self.t0 for i in self.lista_temp]
 
-        with open("tentativa.csv", "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(["timestamp", "distancia", "velocidade", "aceleracao"])
-            for i, leitura in enumerate(self.lista_temp):
-                writer.writerow([f"{tempos[i]:.2f}", f"{leitura["y"]:.2f}",f"{leitura["v"]:.2f}",f"{leitura["a"]:.2f}"])
-            with self.lock:
-                #Limpar a lista
-                self.lista_temp.clear()
+            with open("tentativa.csv", "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["timestamp", "distancia", "velocidade", "aceleracao"])
+                for i, leitura in enumerate(self.lista_temp):
+                    writer.writerow([f"{tempos[i]:.2f}", f"{leitura["y"]:.2f}",f"{leitura["v"]:.2f}",f"{leitura["a"]:.2f}"])
+            #Limpar a lista
+            self.lista_temp.clear()
+
     def alternar_gravacao(self):
         if not self.a_gravar:
             #Ramo de começar a gravar!!
@@ -229,6 +271,6 @@ if __name__ == "__main__":
     app = LidarSub(root, frame_teste)
 
     root.after(2000, app.alternar_gravacao)  # começar a gravar aos 2s
-    root.after(6000, app.alternar_gravacao)  # parar de gravar aos 6s
+    root.after(12000, app.alternar_gravacao)  # parar de gravar aos 6s
 
     root.mainloop()
