@@ -16,10 +16,10 @@ def main():
     try:
         zed = ZedSub()
         lidarSub = LidarSub()
-        time.sleep(1) #deixa estabilizar
+        time.sleep(2) #deixa estabilizar
         lidarSub.alternar_gravacao() # começar a gravar
         zed.alternar_gravacao()
-        time.sleep(8) # mexe a mão à frente da câmera
+        time.sleep(4) # mexe a mão à frente da câmera
         #Correr coisas..
         ultimo_frame = zed.get_ultimo_frame() #recolher o ultimo frame do zedsub
         print(ultimo_frame.shape, ultimo_frame.dtype)

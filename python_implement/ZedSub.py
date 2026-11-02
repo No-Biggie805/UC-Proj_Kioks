@@ -108,13 +108,13 @@ class ZedSub:
                     # Se get_status não suceder
                     # print(repr(get_status), end='\r')
                     if get_status > sl.ERROR_CODE.SUCCESS:
-                        # print(f"Leitura inválida no pixel central: {repr(get_status)}")
-                        pass
+                        print(f"Leitura inválida no pixel central: {repr(get_status)}")
+                        # pass
                     # Se valor for nan ou inf
                     # Se valor for um numero normal, mas irrelevante para T-Test [PROFUNDIDADE_MIN, PROFUNDIDADE_MAX]
                     elif math.isnan(valor) or math.isinf(valor) or valor < 0 or valor > 1000:
-                        # print(f"Valor é infinito ou nulo, ou fora de range válido para T-Test")
-                        pass
+                        print(f"Valor é infinito ou nulo, ou fora de range válido para T-Test")
+                        # pass
                     # Se valor for válido e normal..
                     else:  
                         with self.lock: #Travar o processo do append durante um bocado
