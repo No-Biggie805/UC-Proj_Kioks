@@ -48,3 +48,5 @@ python_implement/Notas/PreDecisoes_refactor/Decicoes_LidarSub/Ponto2.: Escrever 
 python_implement_bak1.zip
 python_implement_bak2.zip
 .gitignore
+frontend/node_modules/
+frontend/dist/

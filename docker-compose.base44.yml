@@ -1,0 +1,49 @@
+# Ambiente de desenvolvimento do Base44.
+#
+# A página (frontend/) corre a partir do código clonado, com o servidor Vite em
+# modo dev. O servidor WebSocket (python_implement/servidor.py) não corre aqui:
+# precisa da câmara ZED e do sensor LiDAR ligados à máquina onde é lançado.
+#
+#   docker compose -f docker-compose.base44.yml up -d --build
+#
+# Endereço do WebSocket usado pela página: VITE_WS_URL (por omissão o do
+# contrato, ws://localhost:8000/ws).
+
+services:
+  web:
+    image: node:22
+    working_dir: /app/frontend
+    labels:
+      base44.project: "Frontend"
+      base44.kind: "web"
+      base44.port: "3000"
+    ports:
+      - "3000:5173"
+    environment:
+      - BASE44_PREVIEW_MODE
+      - BASE44_PUBLIC_HOST_SUFFIX
+      - BASE44_SANDBOX_HOST_DOMAIN
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+      - VITE_WS_URL=${VITE_WS_URL:-ws://localhost:8000/ws}
+    volumes:
+      - .:/app
+      - node_modules:/app/frontend/node_modules
+    command:
+      - sh
+      - -ec
+      - |
+        npm ci --no-audit --no-fund
+        exec npm run dev
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          node -e "fetch('http://127.0.0.1:5173/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    restart: on-failure
+
+volumes:
+  node_modules:
