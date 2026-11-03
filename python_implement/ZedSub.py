@@ -29,6 +29,7 @@ Para tal temos isto então estruturado da seguinte forma:
     -fechar: função para exit do programa
 """
 class ZedSub:
+    OFFSET_ZED_M = 0.028 #Constante da classe em metros
 
     def __init__(self, camera_resolution=sl.RESOLUTION.HD720, fps=60):
         self.zed = sl.Camera() 
@@ -38,7 +39,7 @@ class ZedSub:
         self.init_params = sl.InitParameters()
         self.init_params.camera_resolution = sl.RESOLUTION.HD720   # confirmaste 720@60fps no ZED_Explorer
         self.init_params.camera_fps = 60
-        self.init_params.coordinate_units = sl.UNIT.CENTIMETER      # para bater certo com o TF02_pro.py (guarda em cm)
+        self.init_params.coordinate_units = sl.UNIT.METER     # para bater certo com o TF02_pro.py (agora guarda em m)
         self.init_params.depth_mode = sl.DEPTH_MODE.NEURAL_LIGHT     # modo mais leve/rápido; NEURAL fica como opção futura se precisares de mais precisão
 
         # 3. Abrir a câmara e validar
@@ -112,11 +113,13 @@ class ZedSub:
                         # pass
                     # Se valor for nan ou inf
                     # Se valor for um numero normal, mas irrelevante para T-Test [PROFUNDIDADE_MIN, PROFUNDIDADE_MAX]
-                    elif math.isnan(valor) or math.isinf(valor) or valor < 0 or valor > 1000:
+                    elif math.isnan(valor) or math.isinf(valor) or valor < 0 or valor > 10:
                         print(f"Valor é infinito ou nulo, ou fora de range válido para T-Test")
                         # pass
                     # Se valor for válido e normal..
                     else:  
+                        #Adicionar offset ao valor puro da distancia de camera
+                        valor = valor + self.OFFSET_ZED_M
                         with self.lock: #Travar o processo do append durante um bocado
                             #O lock vai obrigar que uma thread chegue ao lock, enquanto que outra estiver já dentro de um.
                             if self.a_gravar:
@@ -153,18 +156,39 @@ class ZedSub:
             # self.numero_tentativa += 1
         pass
 
+    #Estas três funções também são necessárias pois o claude no servidor.py declarou o método para as chamar, se não tiver dá erro.
+    def iniciar_gravacao(self):
+        with self.lock:
+            self.lista_temp.clear()
+            self.t0 = time.time()
+        self.a_gravar = True
+
+    def parar_gravacao(self):
+        self.a_gravar = False
+
+    def guardar_csv(self):
+        self._guardar_csv_tentativa()
+
+    def get_ultima_amostra(self):
+        with self.lock:
+            if not self.lista_temp:
+                return None
+            u = self.lista_temp[-1]
+            return {"t_s": u["t"] - self.t0, "distancia_m": u["y"],
+                    "velocidade": u["v"], "aceleracao": u["a"]}
+
+    def get_amostras(self):
+        with self.lock:
+            return list(self.lista_temp)
+    
     def alternar_gravacao(self):
         """Chamado pela thread principal a cada Enter. Faz o toggle."""
         if not self.a_gravar: #condição que aciona quando programa não corre
-            # Esvaziar o lista_temp que protege o código contra exceções assim como o Lidar
-            self.lista_temp.clear() 
-            self.t0 = time.time()
-            self.a_gravar = True
-            print("A gravar... primir Enter para parar.")
+            self.iniciar_gravacao()
         else: #condição que aciona quando o programa estiver a correr
             # Neste momento o programa vai parar de correr
-            self.a_gravar = False
-            print("Thread de gravação Parado, a iniciar gravação para ficheiro")
+            self.parar_gravacao()
+            print("Thread de gravação Zed Parado, a iniciar gravação para ficheiro")
             # chamar o _guardar_csv_tentativa? eu acho que sim pois gravação para e passa a escrita
             self._guardar_csv_tentativa()
 

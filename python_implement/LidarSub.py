@@ -27,7 +27,7 @@ class LidarSub:
         while self.running:
             if self.a_gravar:
 
-                dist = self.sensor.get_distancia()
+                dist = self.sensor.get_distancia()/100 #Recolher a distância e passar para o metro
                 agora = time.time()
 
                 with self.lock:
@@ -108,20 +108,39 @@ class LidarSub:
                     writer.writerow([f"{tempos[i]:.2f}", f"{leitura["y"]:.2f}",f"{leitura["v"]:.2f}",f"{leitura["a"]:.2f}"])
             #Limpar a lista
             self.lista_temp.clear()
+    
+    def iniciar_gravacao(self):
+        with self.lock:
+            self.lista_temp.clear()
+            self.t0 = time.time()
+        self.a_gravar = True
+
+    def parar_gravacao(self):
+        self.a_gravar = False
+
+    def guardar_csv(self):
+        self._guardar_csv_tentativa()
+
+    def get_ultima_amostra(self):
+        with self.lock:
+            if not self.lista_temp:
+                return None
+            u = self.lista_temp[-1]
+            return {"t_s": u["t"] - self.t0, "distancia_m": u["y"],
+                    "velocidade": u["v"], "aceleracao": u["a"]}
+
+    def get_amostras(self):
+        with self.lock:
+            return list(self.lista_temp) 
 
     def alternar_gravacao(self):
         if not self.a_gravar:
             #Ramo de começar a gravar!!
-            #O código limpa as listas assim que começar a correr, de seguida passa o correr para recolha de dados a True
-            #O lista_temp será também esvaziado, este clear vai proteger o programa quando o for loop do _guardar_csv atinjir exceções
-            with self.lock:
-                self.lista_temp.clear() 
-                self.t0 = time.time() 
-            self.a_gravar = True #flag ativa, começou a gravar (isto vai influenciar quando começar a ter o sistema do input() e _read_loop)
+            self.iniciar_gravacao()    
         else: 
             #Ramo de parar de gravar
-            self.a_gravar = False 
-            print("Thread de gravação Parado, a iniciar gravação para ficheiro")
+            self.parar_gravacao()
+            print("Thread de gravação Lidar Parado, a iniciar gravação para ficheiro")
             #Futuramente ver aqui do guardar CSV semelhante ao do GravadorZed
             self._guardar_csv_tentativa()
     
