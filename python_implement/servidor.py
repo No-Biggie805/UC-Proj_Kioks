@@ -9,6 +9,7 @@ o processo abre a câmara e a porta série uma única vez):
         uvicorn servidor:app --port 8000
     Se o de cima falhar:  
         python -m uvicorn servidor:app --port 8000
+3.  No zen browser verificar em about:config que: network.lna.blocking está a false
 
 A página liga-se a:  ws://localhost:8000/ws
 
