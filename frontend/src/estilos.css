@@ -427,6 +427,15 @@ p {
   color: var(--texto-fraco);
 }
 
+.metrica-nota {
+  font-size: 10px;
+  color: var(--texto-fraco);
+}
+
+.metricas--coluna {
+  flex-direction: column;
+}
+
 /* ---------- gráficos ---------- */
 .grafico {
   display: flex;

@@ -24,8 +24,9 @@ function Metricas({ amostra }: { amostra: Amostra | undefined }) {
         <strong className="metrica-valor">{valor(amostra?.velocidade, 2, 'm/s')}</strong>
       </div>
       <div className="metrica">
-        <span className="metrica-rotulo">Aceleração atual</span>
-        <strong className="metrica-valor">{valor(amostra?.aceleracao, 2, 'm/s²')}</strong>
+        <span className="metrica-rotulo">Taxa de aquisição</span>
+        <strong className="metrica-valor metrica-valor--pi">—</strong>
+        <small className="metrica-nota">por implementar</small>
       </div>
     </div>
   )
@@ -45,16 +46,35 @@ export function SensorPainel({ series, estado }: Props) {
     >
       <Metricas amostra={ultimaLidar} />
       <div className="grafico-mini">
-        <GraficoLinhas lidar={series.lidar} zed={series.zed} campo="distancia_m" unidade="m" />
+        {/* Este painel é só do sensor LiDAR; a série ZED é usada nos painéis de comparação. */}
+        <GraficoLinhas lidar={series.lidar} campo="distancia_m" unidade="m" />
       </div>
     </Painel>
   )
 }
 
 export function ComparacaoPainel({ series }: { series: Series }) {
+  const ultimaLidar = series.lidar[series.lidar.length - 1]
+  const ultimaZed = series.zed[series.zed.length - 1]
+  // Único valor derivado da página: subtração das duas últimas amostras recebidas.
+  const diferenca =
+    ultimaLidar !== undefined && ultimaZed !== undefined
+      ? ultimaZed.distancia_m - ultimaLidar.distancia_m
+      : undefined
+
   return (
     <Painel titulo="Comparação de distância (ZED vs Sensor)">
       <GraficoLinhas lidar={series.lidar} zed={series.zed} campo="distancia_m" unidade="m" />
+      <div className="metricas metricas--coluna">
+        <div className="metrica">
+          <span className="metrica-rotulo">Distância atual</span>
+          <strong className="metrica-valor">{valor(ultimaLidar?.distancia_m, 2, 'm')}</strong>
+        </div>
+        <div className="metrica">
+          <span className="metrica-rotulo">Diferença (ZED − Sensor)</span>
+          <strong className="metrica-valor">{valor(diferenca, 2, 'm')}</strong>
+        </div>
+      </div>
     </Painel>
   )
 }

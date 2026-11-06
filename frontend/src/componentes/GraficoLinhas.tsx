@@ -8,7 +8,8 @@ const NUM_TICKS = 4
 
 interface Props {
   lidar: Amostra[]
-  zed: Amostra[]
+  // Sem série ZED o gráfico mostra só o LiDAR (nem linha nem legenda ZED).
+  zed?: Amostra[]
   campo: CampoGrafico
   unidade: string
 }
@@ -24,7 +25,7 @@ function ticks(minimo: number, maximo: number) {
 }
 
 export function GraficoLinhas({ lidar, zed, campo, unidade }: Props) {
-  const todas = [...lidar, ...zed]
+  const todas = zed ? [...lidar, ...zed] : lidar
 
   if (todas.length === 0) {
     return <div className="grafico-vazio">Sem dados</div>
@@ -107,10 +108,10 @@ export function GraficoLinhas({ lidar, zed, campo, unidade }: Props) {
           y2={ALTURA - MARGEM.fundo}
         />
 
-        <path className="serie serie--zed" d={caminho(zed)} />
+        {zed ? <path className="serie serie--zed" d={caminho(zed)} /> : null}
         <path className="serie serie--lidar" d={caminho(lidar)} />
 
-        {zed.length === 1 ? (
+        {zed && zed.length === 1 ? (
           <circle className="ponto ponto--zed" cx={x(zed[0].t_s)} cy={y(zed[0][campo])} r={2.5} />
         ) : null}
         {lidar.length === 1 ? (
@@ -130,10 +131,12 @@ export function GraficoLinhas({ lidar, zed, campo, unidade }: Props) {
           <span className="legenda-cor legenda-cor--lidar" aria-hidden="true" />
           LiDAR
         </li>
-        <li>
-          <span className="legenda-cor legenda-cor--zed" aria-hidden="true" />
-          ZED
-        </li>
+        {zed ? (
+          <li>
+            <span className="legenda-cor legenda-cor--zed" aria-hidden="true" />
+            ZED
+          </li>
+        ) : null}
       </ul>
     </div>
   )
