@@ -5,12 +5,7 @@ import { Cabecalho } from './componentes/Cabecalho'
 import { CamaraPainel } from './componentes/CamaraPainel'
 import { EstadoTestePainel } from './componentes/EstadoTestePainel'
 import { Painel, PorImplementar } from './componentes/Painel'
-import {
-  AceleracaoPainel,
-  ComparacaoPainel,
-  SensorPainel,
-  VelocidadePainel,
-} from './componentes/PaineisGraficos'
+import { ComparacaoPainel, SensorPainel } from './componentes/PaineisGraficos'
 import { ResultadoFinalPainel } from './componentes/ResultadoFinalPainel'
 import { ResultadosTempoRealPainel } from './componentes/ResultadosTempoRealPainel'
 
@@ -58,16 +53,8 @@ export default function App() {
             <EstadoTestePainel estado={estado} tempoDecorrido={ultimaLidar?.t_s} />
           </div>
 
-          <div className="span-4">
+          <div className="span-12">
             <ComparacaoPainel series={series} />
-          </div>
-
-          <div className="span-4">
-            <VelocidadePainel series={series} />
-          </div>
-
-          <div className="span-4">
-            <AceleracaoPainel series={series} />
           </div>
 
           <div className="span-5">

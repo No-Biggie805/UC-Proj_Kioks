@@ -513,6 +513,67 @@ p {
   background: var(--azul);
 }
 
+/* ---------- comparação de distância ---------- */
+.comparacao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.comparacao-grafico {
+  flex: 1 1 420px;
+  min-width: 0;
+  display: flex;
+}
+
+.comparacao-resumo {
+  flex: 0 1 220px;
+  background: #f8fafc;
+  border: 1px solid var(--borda-suave);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comparacao-resumo h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.comparacao-linhas {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.comparacao-linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.comparacao-linha dt {
+  color: var(--texto-suave);
+}
+
+.comparacao-linha dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.comparacao-linha--separada {
+  border-top: 1px solid var(--borda);
+  padding-top: 8px;
+}
+
 .grafico-vazio {
   flex: 1;
   min-height: 118px;
@@ -761,6 +822,10 @@ p {
   .metricas--grelha,
   .resultado-grelha {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .comparacao-resumo {
+    flex-basis: 100%;
   }
 
   .barra-controlo {

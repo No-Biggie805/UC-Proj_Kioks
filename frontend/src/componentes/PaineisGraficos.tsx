@@ -46,7 +46,7 @@ export function SensorPainel({ series, estado }: Props) {
     >
       <Metricas amostra={ultimaLidar} />
       <div className="grafico-mini">
-        {/* Este painel é só do sensor LiDAR; a série ZED é usada nos painéis de comparação. */}
+        {/* Este painel é só do sensor LiDAR; a série ZED é usada no painel de comparação. */}
         <GraficoLinhas lidar={series.lidar} campo="distancia_m" unidade="m" />
       </div>
     </Painel>
@@ -56,41 +56,45 @@ export function SensorPainel({ series, estado }: Props) {
 export function ComparacaoPainel({ series }: { series: Series }) {
   const ultimaLidar = series.lidar[series.lidar.length - 1]
   const ultimaZed = series.zed[series.zed.length - 1]
-  // Único valor derivado da página: subtração das duas últimas amostras recebidas.
+  // Único valor derivado da página: distância entre as duas últimas amostras recebidas.
   const diferenca =
     ultimaLidar !== undefined && ultimaZed !== undefined
-      ? ultimaZed.distancia_m - ultimaLidar.distancia_m
+      ? Math.abs(ultimaZed.distancia_m - ultimaLidar.distancia_m)
       : undefined
 
   return (
     <Painel titulo="Comparação de distância (ZED vs Sensor)">
-      <GraficoLinhas lidar={series.lidar} zed={series.zed} campo="distancia_m" unidade="m" />
-      <div className="metricas metricas--coluna">
-        <div className="metrica">
-          <span className="metrica-rotulo">Distância atual</span>
-          <strong className="metrica-valor">{valor(ultimaLidar?.distancia_m, 2, 'm')}</strong>
+      <div className="comparacao">
+        <div className="comparacao-grafico">
+          <GraficoLinhas
+            lidar={series.lidar}
+            zed={series.zed}
+            campo="distancia_m"
+            unidade="m"
+            eixoY="Distância (m)"
+            largura={760}
+            altura={300}
+          />
         </div>
-        <div className="metrica">
-          <span className="metrica-rotulo">Diferença (ZED − Sensor)</span>
-          <strong className="metrica-valor">{valor(diferenca, 2, 'm')}</strong>
-        </div>
+
+        <aside className="comparacao-resumo">
+          <h3>Distância atual</h3>
+          <dl className="comparacao-linhas">
+            <div className="comparacao-linha">
+              <dt>ZED</dt>
+              <dd>{valor(ultimaZed?.distancia_m, 2, 'm')}</dd>
+            </div>
+            <div className="comparacao-linha">
+              <dt>Sensor</dt>
+              <dd>{valor(ultimaLidar?.distancia_m, 2, 'm')}</dd>
+            </div>
+            <div className="comparacao-linha comparacao-linha--separada">
+              <dt>Diferença</dt>
+              <dd>{valor(diferenca, 2, 'm')}</dd>
+            </div>
+          </dl>
+        </aside>
       </div>
-    </Painel>
-  )
-}
-
-export function VelocidadePainel({ series }: { series: Series }) {
-  return (
-    <Painel titulo="Velocidade (LiDAR vs ZED)">
-      <GraficoLinhas lidar={series.lidar} zed={series.zed} campo="velocidade" unidade="m/s" />
-    </Painel>
-  )
-}
-
-export function AceleracaoPainel({ series }: { series: Series }) {
-  return (
-    <Painel titulo="Aceleração (LiDAR vs ZED)">
-      <GraficoLinhas lidar={series.lidar} zed={series.zed} campo="aceleracao" unidade="m/s²" />
     </Painel>
   )
 }

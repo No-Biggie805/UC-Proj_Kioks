@@ -1,9 +1,9 @@
 import type { Amostra, CampoGrafico } from '../protocolo'
 
-const LARGURA = 360
-const ALTURA = 180
-const MARGEM = { topo: 12, direita: 12, fundo: 26, esquerda: 44 }
+const MARGEM = { topo: 18, direita: 12, fundo: 30, esquerda: 46 }
 const MAX_PONTOS_DESENHADOS = 400
+// Marcadores visíveis por série: os dados chegam a ~30 amostras/s.
+const MAX_MARCADORES = 24
 const NUM_TICKS = 4
 
 interface Props {
@@ -12,6 +12,10 @@ interface Props {
   zed?: Amostra[]
   campo: CampoGrafico
   unidade: string
+  // Rótulo do eixo Y; por omissão mostra a unidade.
+  eixoY?: string
+  largura?: number
+  altura?: number
 }
 
 function formatarEixo(valor: number) {
@@ -24,7 +28,15 @@ function ticks(minimo: number, maximo: number) {
   return Array.from({ length: NUM_TICKS }, (_, i) => minimo + i * passo)
 }
 
-export function GraficoLinhas({ lidar, zed, campo, unidade }: Props) {
+export function GraficoLinhas({
+  lidar,
+  zed,
+  campo,
+  unidade,
+  eixoY,
+  largura = 360,
+  altura = 180,
+}: Props) {
   const todas = zed ? [...lidar, ...zed] : lidar
 
   if (todas.length === 0) {
@@ -52,33 +64,66 @@ export function GraficoLinhas({ lidar, zed, campo, unidade }: Props) {
   }
 
   const intervaloX = tMax - tMin || 1
-  const larguraUtil = LARGURA - MARGEM.esquerda - MARGEM.direita
-  const alturaUtil = ALTURA - MARGEM.topo - MARGEM.fundo
+  const larguraUtil = largura - MARGEM.esquerda - MARGEM.direita
+  const alturaUtil = altura - MARGEM.topo - MARGEM.fundo
+  const baseY = altura - MARGEM.fundo
 
   const x = (t: number) => MARGEM.esquerda + ((t - tMin) / intervaloX) * larguraUtil
   const y = (valor: number) => MARGEM.topo + (1 - (valor - yMin) / (yMax - yMin)) * alturaUtil
 
-  const caminho = (lista: Amostra[]) => {
-    if (lista.length === 0) return ''
+  const desenhadas = (lista: Amostra[]) => {
+    if (lista.length === 0) return []
     const passo = Math.max(1, Math.ceil(lista.length / MAX_PONTOS_DESENHADOS))
-    const pontos = lista.filter((_, i) => i % passo === 0 || i === lista.length - 1)
-    return pontos
+    return lista.filter((_, i) => i % passo === 0 || i === lista.length - 1)
+  }
+
+  const caminho = (pontos: Amostra[]) =>
+    pontos
       .map((a, i) => `${i === 0 ? 'M' : 'L'}${x(a.t_s).toFixed(1)},${y(a[campo]).toFixed(1)}`)
       .join(' ')
+
+  const marcadores = (pontos: Amostra[], classe: string) => {
+    const passo = Math.max(1, Math.ceil(pontos.length / MAX_MARCADORES))
+    return pontos
+      .filter((_, i) => i % passo === 0 || i === pontos.length - 1)
+      .map((a, i) => (
+        <circle key={`${classe}-${i}`} className={`ponto ponto--${classe}`} cx={x(a.t_s)} cy={y(a[campo])} r={2.6} />
+      ))
   }
 
   const ticksY = ticks(yMin, yMax)
   const ticksX = ticks(tMin, tMax)
+  const pontosLidar = desenhadas(lidar)
+  const pontosZed = zed ? desenhadas(zed) : []
 
   return (
     <div className="grafico">
-      <svg viewBox={`0 0 ${LARGURA} ${ALTURA}`} role="img" aria-label={`Gráfico de ${unidade} ao longo do tempo`}>
+      <svg
+        viewBox={`0 0 ${largura} ${altura}`}
+        role="img"
+        aria-label={`Gráfico de ${unidade} ao longo do tempo`}
+      >
+        {ticksX.map((valor, indice) => (
+          <g key={`x-${indice}`}>
+            <line
+              className="grafico-grelha"
+              x1={x(valor)}
+              x2={x(valor)}
+              y1={MARGEM.topo}
+              y2={baseY}
+            />
+            <text className="grafico-rotulo" x={x(valor)} y={baseY + 14} textAnchor="middle">
+              {valor.toFixed(1)}
+            </text>
+          </g>
+        ))}
+
         {ticksY.map((valor, indice) => (
           <g key={`y-${indice}`}>
             <line
               className="grafico-grelha"
               x1={MARGEM.esquerda}
-              x2={LARGURA - MARGEM.direita}
+              x2={largura - MARGEM.direita}
               y1={y(valor)}
               y2={y(valor)}
             />
@@ -88,55 +133,36 @@ export function GraficoLinhas({ lidar, zed, campo, unidade }: Props) {
           </g>
         ))}
 
-        {ticksX.map((valor, indice) => (
-          <text
-            key={`x-${indice}`}
-            className="grafico-rotulo"
-            x={x(valor)}
-            y={ALTURA - MARGEM.fundo + 14}
-            textAnchor="middle"
-          >
-            {valor.toFixed(1)}
-          </text>
-        ))}
+        <line className="grafico-eixo" x1={MARGEM.esquerda} x2={largura - MARGEM.direita} y1={baseY} y2={baseY} />
 
-        <line
-          className="grafico-eixo"
-          x1={MARGEM.esquerda}
-          x2={LARGURA - MARGEM.direita}
-          y1={ALTURA - MARGEM.fundo}
-          y2={ALTURA - MARGEM.fundo}
-        />
-
-        {zed ? <path className="serie serie--zed" d={caminho(zed)} /> : null}
-        <path className="serie serie--lidar" d={caminho(lidar)} />
-
-        {zed && zed.length === 1 ? (
-          <circle className="ponto ponto--zed" cx={x(zed[0].t_s)} cy={y(zed[0][campo])} r={2.5} />
+        {zed ? (
+          <>
+            <path className="serie serie--zed" d={caminho(pontosZed)} />
+            {marcadores(pontosZed, 'zed')}
+          </>
         ) : null}
-        {lidar.length === 1 ? (
-          <circle className="ponto ponto--lidar" cx={x(lidar[0].t_s)} cy={y(lidar[0][campo])} r={2.5} />
-        ) : null}
+        <path className="serie serie--lidar" d={caminho(pontosLidar)} />
+        {marcadores(pontosLidar, 'lidar')}
 
-        <text className="grafico-titulo-eixo" x={LARGURA / 2} y={ALTURA - 3} textAnchor="middle">
-          t (s)
+        <text className="grafico-titulo-eixo" x={largura / 2} y={altura - 4} textAnchor="middle">
+          Tempo (s)
         </text>
-        <text className="grafico-titulo-eixo" x={10} y={MARGEM.topo + 2} textAnchor="start">
-          {unidade}
+        <text className="grafico-titulo-eixo" x={8} y={11} textAnchor="start">
+          {eixoY ?? unidade}
         </text>
       </svg>
 
       <ul className="legenda">
-        <li>
-          <span className="legenda-cor legenda-cor--lidar" aria-hidden="true" />
-          LiDAR
-        </li>
         {zed ? (
           <li>
             <span className="legenda-cor legenda-cor--zed" aria-hidden="true" />
-            ZED
+            ZED (posição 3D)
           </li>
         ) : null}
+        <li>
+          <span className="legenda-cor legenda-cor--lidar" aria-hidden="true" />
+          {zed ? 'Sensor de distância' : 'LiDAR'}
+        </li>
       </ul>
     </div>
   )
