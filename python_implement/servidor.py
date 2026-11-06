@@ -4,8 +4,11 @@ Passo 7 — Backend FastAPI/WebSocket sobre o motor (LidarSub + ZedSub).
 Correr a partir de python_implement/ (SEM --reload e com 1 só worker, porque
 o processo abre a câmara e a porta série uma única vez):
 
-    QT_QPA_PLATFORM=xcb __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia \
+1.  source .venv/bin/activate #python -c "import pyzed.sl, serial, fastapi, uvicorn; print('ok')", verifica as dependências
+2.    QT_QPA_PLATFORM=xcb __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia \
         uvicorn servidor:app --port 8000
+    Se o de cima falhar:  
+        python -m uvicorn servidor:app --port 8000
 
 A página liga-se a:  ws://localhost:8000/ws
 
