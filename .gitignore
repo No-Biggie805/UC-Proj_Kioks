@@ -8,12 +8,6 @@ venv/
 dist/
 build/
 .DS_Store
-<<<<<<< Updated upstream
-=======
-__pycache__/
-
-python_implement/ZED_2i-Camera/tentativa.csv
->>>>>>> Stashed changes
 UC-Proj_Kioks.code-workspace
 python_implement/Notas/Guardar_CSV/Notas_csv_LIDAR.md
 python_implement/tentativas_csv/tentativa_1_2026-09-11.csv
@@ -46,5 +40,9 @@ python_implement/Notas/PreDecisoes_refactor/Decicoes_LidarSub/JanelaCalculo.md
 python_implement/Notas/PreDecisoes_refactor/Decicoes_LidarSub/Ponto2.: Escrever funções.md
 python_implement_bak1.zip
 python_implement_bak2.zip
-python_implement/tentativa_lidar.csv
+.gitignore
+frontend/node_modules/
+frontend/dist/
+python_implement/ZED_2i-Camera/tentativa.csv
 python_implement/Notas/PreDecisoes_refactor/Decisões_ZedSub/limite_salto.md
+python_implement/tentativa_lidar.csv
