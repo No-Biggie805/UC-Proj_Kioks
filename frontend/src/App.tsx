@@ -23,7 +23,8 @@ export default function App() {
         <Cabecalho ligacao={ligacao} estado={estado} />
 
         <main className="grelha">
-          <div className="span-5">
+          {/* Linha 1 — visão de câmara */}
+          <div className="span-3">
             <CamaraPainel imagemRef={imagemRef} temImagem={temImagem} ligado={ligacao === 'ligada'} />
           </div>
 
@@ -33,7 +34,7 @@ export default function App() {
             </Painel>
           </div>
 
-          <div className="span-4">
+          <div className="span-3">
             <Painel titulo="Pose 3D (ZED)">
               <PorImplementar nota="Chega da ZED" />
             </Painel>
@@ -45,6 +46,7 @@ export default function App() {
             </Painel>
           </div>
 
+          {/* Linha 2 — sensor, estado do teste e trajetória */}
           <div className="span-5">
             <SensorPainel series={series} estado={estado} />
           </div>
@@ -53,21 +55,22 @@ export default function App() {
             <EstadoTestePainel estado={estado} tempoDecorrido={ultimaLidar?.t_s} />
           </div>
 
-          <div className="span-12">
-            <ComparacaoPainel series={series} />
-          </div>
-
-          <div className="span-5">
-            <ResultadosTempoRealPainel amostra={ultimaLidar} />
-          </div>
-
           <div className="span-3">
             <Painel titulo="Trajetória do utilizador (vista superior)">
               <PorImplementar nota="Depende das fases do teste" />
             </Painel>
           </div>
 
-          <div className="span-4">
+          {/* Linha 3 — comparação, resultados em tempo real e resultado final */}
+          <div className="span-6">
+            <ComparacaoPainel series={series} />
+          </div>
+
+          <div className="span-3">
+            <ResultadosTempoRealPainel amostra={ultimaLidar} />
+          </div>
+
+          <div className="span-3">
             <ResultadoFinalPainel resultado={resultado} />
           </div>
         </main>

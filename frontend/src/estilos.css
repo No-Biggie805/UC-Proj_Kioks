@@ -260,6 +260,10 @@ p {
   grid-column: span 5;
 }
 
+.span-6 {
+  grid-column: span 6;
+}
+
 .span-12 {
   grid-column: span 12;
 }
@@ -522,13 +526,13 @@ p {
 }
 
 .comparacao-grafico {
-  flex: 1 1 420px;
+  flex: 1 1 300px;
   min-width: 0;
   display: flex;
 }
 
 .comparacao-resumo {
-  flex: 0 1 220px;
+  flex: 0 1 200px;
   background: #f8fafc;
   border: 1px solid var(--borda-suave);
   border-radius: 10px;
@@ -798,7 +802,8 @@ p {
     grid-column: span 6;
   }
 
-  .span-5 {
+  .span-5,
+  .span-6 {
     grid-column: span 12;
   }
 }
@@ -815,6 +820,7 @@ p {
   .span-3,
   .span-4,
   .span-5,
+  .span-6,
   .span-12 {
     grid-column: span 12;
   }

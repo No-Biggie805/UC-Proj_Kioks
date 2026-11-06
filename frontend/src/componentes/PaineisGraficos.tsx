@@ -72,8 +72,6 @@ export function ComparacaoPainel({ series }: { series: Series }) {
             campo="distancia_m"
             unidade="m"
             eixoY="Distância (m)"
-            largura={760}
-            altura={300}
           />
         </div>
 

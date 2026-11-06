@@ -1,5 +1,7 @@
 import type { Amostra, CampoGrafico } from '../protocolo'
 
+const LARGURA = 360
+const ALTURA = 180
 const MARGEM = { topo: 18, direita: 12, fundo: 30, esquerda: 46 }
 const MAX_PONTOS_DESENHADOS = 400
 // Marcadores visíveis por série: os dados chegam a ~30 amostras/s.
@@ -14,8 +16,6 @@ interface Props {
   unidade: string
   // Rótulo do eixo Y; por omissão mostra a unidade.
   eixoY?: string
-  largura?: number
-  altura?: number
 }
 
 function formatarEixo(valor: number) {
@@ -28,15 +28,7 @@ function ticks(minimo: number, maximo: number) {
   return Array.from({ length: NUM_TICKS }, (_, i) => minimo + i * passo)
 }
 
-export function GraficoLinhas({
-  lidar,
-  zed,
-  campo,
-  unidade,
-  eixoY,
-  largura = 360,
-  altura = 180,
-}: Props) {
+export function GraficoLinhas({ lidar, zed, campo, unidade, eixoY }: Props) {
   const todas = zed ? [...lidar, ...zed] : lidar
 
   if (todas.length === 0) {
@@ -64,9 +56,9 @@ export function GraficoLinhas({
   }
 
   const intervaloX = tMax - tMin || 1
-  const larguraUtil = largura - MARGEM.esquerda - MARGEM.direita
-  const alturaUtil = altura - MARGEM.topo - MARGEM.fundo
-  const baseY = altura - MARGEM.fundo
+  const larguraUtil = LARGURA - MARGEM.esquerda - MARGEM.direita
+  const alturaUtil = ALTURA - MARGEM.topo - MARGEM.fundo
+  const baseY = ALTURA - MARGEM.fundo
 
   const x = (t: number) => MARGEM.esquerda + ((t - tMin) / intervaloX) * larguraUtil
   const y = (valor: number) => MARGEM.topo + (1 - (valor - yMin) / (yMax - yMin)) * alturaUtil
@@ -99,7 +91,7 @@ export function GraficoLinhas({
   return (
     <div className="grafico">
       <svg
-        viewBox={`0 0 ${largura} ${altura}`}
+        viewBox={`0 0 ${LARGURA} ${ALTURA}`}
         role="img"
         aria-label={`Gráfico de ${unidade} ao longo do tempo`}
       >
@@ -123,7 +115,7 @@ export function GraficoLinhas({
             <line
               className="grafico-grelha"
               x1={MARGEM.esquerda}
-              x2={largura - MARGEM.direita}
+              x2={LARGURA - MARGEM.direita}
               y1={y(valor)}
               y2={y(valor)}
             />
@@ -133,7 +125,7 @@ export function GraficoLinhas({
           </g>
         ))}
 
-        <line className="grafico-eixo" x1={MARGEM.esquerda} x2={largura - MARGEM.direita} y1={baseY} y2={baseY} />
+        <line className="grafico-eixo" x1={MARGEM.esquerda} x2={LARGURA - MARGEM.direita} y1={baseY} y2={baseY} />
 
         {zed ? (
           <>
@@ -144,7 +136,7 @@ export function GraficoLinhas({
         <path className="serie serie--lidar" d={caminho(pontosLidar)} />
         {marcadores(pontosLidar, 'lidar')}
 
-        <text className="grafico-titulo-eixo" x={largura / 2} y={altura - 4} textAnchor="middle">
+        <text className="grafico-titulo-eixo" x={LARGURA / 2} y={ALTURA - 4} textAnchor="middle">
           Tempo (s)
         </text>
         <text className="grafico-titulo-eixo" x={8} y={11} textAnchor="start">
