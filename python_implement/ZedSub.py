@@ -30,10 +30,15 @@ Para tal temos isto então estruturado da seguinte forma:
 """
 class ZedSub:
     OFFSET_ZED_M = 0.028 #Constante da classe em metros
-
+    LIMITE_SALTO_M = 1.5
+    TOLERANCIA_M = 0.5
+    N_CONFIRMACAO = 15
+    
     def __init__(self, camera_resolution=sl.RESOLUTION.HD720, fps=60):
         self.zed = sl.Camera() 
         self.lock = threading.Lock()
+        self.rejeitadas_seguidas = 0
+        self.ultima_rejeitada = None
 
         # 2. Configurar parâmetros de abertura
         self.init_params = sl.InitParameters()
@@ -95,6 +100,7 @@ class ZedSub:
                 # 1 -> grab() -> se sucesso
                 # 2 - grab, busca valores para guardar no mapa e assim..
                 # grab_status = self.zed.grab(runtime_parameters)
+                aceitar = False
                 if (grab_status == sl.ERROR_CODE.SUCCESS): #Se devolver código de sucesso..
                     # 2.1 - buscar medida de profundidade
                     timestamp = time.time() #Ordem de inicializacao assim que estiver a recolher a profundidade
@@ -120,16 +126,38 @@ class ZedSub:
                     else:  
                         #Adicionar offset ao valor puro da distancia de camera
                         valor = valor + self.OFFSET_ZED_M
-                        with self.lock: #Travar o processo do append durante um bocado
+                        
+                        #Iniciar o filtro que rejeta saltos grandes
+                        if self.lista_temp and abs(valor - self.lista_temp[-1]["y"]) > self.LIMITE_SALTO_M: #Condição rejeitada
+                            if self.ultima_rejeitada is not None and abs(valor - self.ultima_rejeitada) <= self.TOLERANCIA_M:
+                                self.rejeitadas_seguidas += 1 #sequência continua k -> k + 1 (em que inclui k e valores que vêm anteriormente)
+                            else:
+                                self.rejeitadas_seguidas = 1 
+                            self.ultima_rejeitada = valor 
+                            if self.rejeitadas_seguidas >= self.N_CONFIRMACAO:
+                                aceitar = True
+                            else:
+                                print(f"Salto rejeitado: valor={valor:.2f} m (rejeitadas seguidas: {self.rejeitadas_seguidas})")
+                        else:
+                            aceitar = True
+                        # print("rejeitas: ", self.rejeitadas_seguidas)
+                        if aceitar == True:
+                            self.rejeitadas_seguidas = 0 #repor nos dois ramos de aceitar
+                            self.ultima_rejeitada = None
+
+                            # #Adicionar offset ao valor puro da distancia de camera
+                            # valor = valor + self.OFFSET_ZED_M
+
                             #O lock vai obrigar que uma thread chegue ao lock, enquanto que outra estiver já dentro de um.
-                            if self.a_gravar:
-                                # 3 - print a "cru" dos valores se for um caso normal
-                                velocidade = self._calcular_vel(timestamp,valor)
-                                aceleracao = self._calcular_acel(timestamp, velocidade)
-                                self.lista_temp.append({"t":timestamp, "y":valor, "v":velocidade, "a":aceleracao})
-                                # Esta impressão acontece de forma a que o valor torne-se fixo no terminal
-                                # print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}", end='\r')#Devolve o (status e valor da distancia em cru), numa linha só
-                                print(f"{self.a_gravar} {get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}")#Devolve o (status e valor da distancia em cru)
+                            with self.lock: #Travar o processo do append durante um bocado
+                                if self.a_gravar:
+                                    # 3 - print a "cru" dos valores se for um caso normal
+                                    velocidade = self._calcular_vel(timestamp,valor)
+                                    aceleracao = self._calcular_acel(timestamp, velocidade)
+                                    self.lista_temp.append({"t":timestamp, "y":valor, "v":velocidade, "a":aceleracao})
+                                    # Esta impressão acontece de forma a que o valor torne-se fixo no terminal
+                                    # print(f"{get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}", end='\r')#Devolve o (status e valor da distancia em cru), numa linha só
+                                    print(f"{self.a_gravar} {get_status!r} {valor:.2f} {velocidade:.2f} {aceleracao:.2f}")#Devolve o (status e valor da distancia em cru)
                 else:
                     print(f"Erro no grab(): {repr(grab_status)}")
             # else:
@@ -150,7 +178,7 @@ class ZedSub:
                 writer.writerow(["timestamp", "distancia", "velocidade", "aceleracao"]) 
                 for i, leitura in enumerate(self.lista_temp):
                     # tempos = [tempos[i] - self.lista_temp[0]["t"]]
-                    writer.writerow([f"{tempos[i]:.2f}", f"{leitura["y"]:.2f}", f"{leitura["v"]:.2f}", f"{leitura["a"]:.2f}"])
+                    writer.writerow([f"{tempos[i]:.2f}", f"{leitura["y"]:.3f}", f"{leitura["v"]:.2f}", f"{leitura["a"]:.2f}"])
             # Limpar a lista
             self.lista_temp.clear()
             # self.numero_tentativa += 1
@@ -158,6 +186,10 @@ class ZedSub:
 
     #Estas três funções também são necessárias pois o claude no servidor.py declarou o método para as chamar, se não tiver dá erro.
     def iniciar_gravacao(self):
+        #why no init e aqui também? Por causa da gravação resetar?
+        self.rejeitadas_seguidas = 0
+        self.ultima_rejeitada = None
+
         with self.lock:
             self.lista_temp.clear()
             self.t0 = time.time()

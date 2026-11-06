@@ -101,7 +101,7 @@ class LidarSub:
             # tempos = [i["t"] - self.lista_temp[0]["t"] for i in self.lista_temp]
             tempos = [i["t"] - self.t0 for i in self.lista_temp]
 
-            with open("tentativa.csv", "w", newline="") as f:
+            with open("tentativa_lidar.csv", "w", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(["timestamp", "distancia", "velocidade", "aceleracao"])
                 for i, leitura in enumerate(self.lista_temp):
