@@ -1,5 +1,5 @@
 import type { Amostra, MensagemEstado, Series } from '../protocolo'
-import { GraficoLinhas } from './GraficoLinhas'
+import { GraficoLinhas, JANELA_S, PASSO_Y_M, Y_MAX_M, Y_MIN_M } from './GraficoLinhas'
 import { Painel } from './Painel'
 
 interface Props {
@@ -47,7 +47,16 @@ export function SensorPainel({ series, estado }: Props) {
       <Metricas amostra={ultimaLidar} />
       <div className="grafico-mini">
         {/* Este painel é só do sensor LiDAR; a série ZED é usada no painel de comparação. */}
-        <GraficoLinhas lidar={series.lidar} campo="distancia_m" unidade="m" />
+        <GraficoLinhas
+          lidar={series.lidar}
+          campo="distancia_m"
+          unidade="m"
+          eixoY="Distância (m)"
+          yMin={Y_MIN_M}
+          yMax={Y_MAX_M}
+          passoY={PASSO_Y_M}
+          janelaS={JANELA_S}
+        />
       </div>
     </Painel>
   )
