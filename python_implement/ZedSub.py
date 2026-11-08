@@ -178,7 +178,7 @@ class ZedSub:
                 writer.writerow(["timestamp", "distancia", "velocidade", "aceleracao"]) 
                 for i, leitura in enumerate(self.lista_temp):
                     # tempos = [tempos[i] - self.lista_temp[0]["t"]]
-                    writer.writerow([f"{tempos[i]:.2f}", f"{leitura["y"]:.3f}", f"{leitura["v"]:.2f}", f"{leitura["a"]:.2f}"])
+                    writer.writerow([f"{tempos[i]:.3f}", f"{leitura["y"]:.2f}", f"{leitura["v"]:.2f}", f"{leitura["a"]:.2f}"])
             # Limpar a lista
             self.lista_temp.clear()
             # self.numero_tentativa += 1
