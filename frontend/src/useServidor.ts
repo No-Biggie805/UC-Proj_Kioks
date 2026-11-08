@@ -65,7 +65,6 @@ export function useServidor(imagemRef: React.MutableRefObject<HTMLImageElement |
 
         case 'lidar':
         case 'zed': {
-          console.log('[ws]', mensagem.tipo, performance.now().toFixed(1), mensagem.t_s, mensagem.distancia_m)
           const amostra: Amostra = {
             t_s: mensagem.t_s,
             distancia_m: mensagem.distancia_m,
