@@ -25,6 +25,14 @@ export interface MensagemCamara {
   imagem_base64: string
 }
 
+// Mesmo formato da câmara, mas com o mapa de profundidade já desenhado pelo
+// servidor (~30 Hz). A página não calcula nada.
+export interface MensagemCamaraProfundidade {
+  tipo: 'camara_profundidade'
+  format: 'jpeg' | 'webp'
+  imagem_base64: string
+}
+
 export interface Amostra {
   t_s: number
   distancia_m: number
@@ -52,6 +60,7 @@ export interface MensagemResultadoFinal {
 export type MensagemServidor =
   | MensagemEstado
   | MensagemCamara
+  | MensagemCamaraProfundidade
   | MensagemAmostra
   | MensagemResultadoFinal
 

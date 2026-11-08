@@ -16,12 +16,16 @@ const ESPERA_MAXIMA_MS = 5000
 const INTERVALO_DESENHO_MS = 100
 const MAX_AMOSTRAS = 1800
 
-export function useServidor(imagemRef: React.MutableRefObject<HTMLImageElement | null>) {
+export function useServidor(
+  imagemRef: React.MutableRefObject<HTMLImageElement | null>,
+  profundidadeRef: React.MutableRefObject<HTMLImageElement | null>,
+) {
   const [ligacao, setLigacao] = useState<EstadoLigacao>('a_ligar')
   const [estado, setEstado] = useState<MensagemEstado | null>(null)
   const [resultado, setResultado] = useState<MensagemResultadoFinal | null>(null)
   const [series, setSeries] = useState<Series>({ lidar: [], zed: [] })
   const [temImagem, setTemImagem] = useState(false)
+  const [temImagemProfundidade, setTemImagemProfundidade] = useState(false)
 
   const wsRef = useRef<WebSocket | null>(null)
   const seriesRef = useRef<Series>({ lidar: [], zed: [] })
@@ -63,6 +67,13 @@ export function useServidor(imagemRef: React.MutableRefObject<HTMLImageElement |
           setTemImagem(true)
           break
 
+        case 'camara_profundidade':
+          if (profundidadeRef.current) {
+            profundidadeRef.current.src = `data:image/${mensagem.format};base64,${mensagem.imagem_base64}`
+          }
+          setTemImagemProfundidade(true)
+          break
+
         case 'lidar':
         case 'zed': {
           const amostra: Amostra = {
@@ -95,6 +106,7 @@ export function useServidor(imagemRef: React.MutableRefObject<HTMLImageElement |
         // Os botões só voltam a ativar quando chegar a mensagem `estado`.
         setEstado(null)
         setTemImagem(false)
+        setTemImagemProfundidade(false)
       }
 
       ws.onmessage = (evento) => {
@@ -115,6 +127,7 @@ export function useServidor(imagemRef: React.MutableRefObject<HTMLImageElement |
         setLigacao('desligada')
         setEstado(null)
         setTemImagem(false)
+        setTemImagemProfundidade(false)
         tentativa += 1
         temporizador = window.setTimeout(ligar, Math.min(tentativa * 1000, ESPERA_MAXIMA_MS))
       }
@@ -132,7 +145,7 @@ export function useServidor(imagemRef: React.MutableRefObject<HTMLImageElement |
       wsRef.current?.close()
       wsRef.current = null
     }
-  }, [agendarDesenho, limparSeries, imagemRef])
+  }, [agendarDesenho, limparSeries, imagemRef, profundidadeRef])
 
   const enviar = useCallback((comando: Comando) => {
     const ws = wsRef.current
@@ -140,5 +153,5 @@ export function useServidor(imagemRef: React.MutableRefObject<HTMLImageElement |
     ws.send(JSON.stringify(comando))
   }, [])
 
-  return { ligacao, estado, resultado, series, temImagem, enviar }
+  return { ligacao, estado, resultado, series, temImagem, temImagemProfundidade, enviar }
 }
