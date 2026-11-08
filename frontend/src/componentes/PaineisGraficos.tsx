@@ -81,6 +81,8 @@ export function ComparacaoPainel({ series }: { series: Series }) {
             campo="distancia_m"
             unidade="m"
             eixoY="Distância (m)"
+            yBase={Y_MAX_M}
+            passoY={PASSO_Y_M}
             janelaS={JANELA_S}
           />
         </div>

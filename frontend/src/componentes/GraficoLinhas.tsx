@@ -26,6 +26,8 @@ interface Props {
   yMin?: number
   yMax?: number
   passoY?: number
+  // Escala automática com mínimo 0 e máximo nunca inferior a este valor (cresce só se os dados o ultrapassarem).
+  yBase?: number
   // Janela temporal deslizante, em segundos, a partir da última amostra LiDAR.
   janelaS?: number
 }
@@ -52,7 +54,7 @@ function segundosInteiros(minimo: number, maximo: number) {
   return Array.from({ length: Math.max(0, ultimo - primeiro + 1) }, (_, i) => primeiro + i)
 }
 
-export function GraficoLinhas({ lidar, zed, campo, unidade, eixoY, yMin, yMax, passoY, janelaS }: Props) {
+export function GraficoLinhas({ lidar, zed, campo, unidade, eixoY, yMin, yMax, passoY, yBase, janelaS }: Props) {
   const todas = zed ? [...lidar, ...zed] : lidar
 
   if (todas.length === 0) {
@@ -89,21 +91,30 @@ export function GraficoLinhas({ lidar, zed, campo, unidade, eixoY, yMin, yMax, p
     const visiveisFiltradas = janelaS !== undefined ? todas.filter((a) => a.t_s >= tMin) : todas
     const visiveis = visiveisFiltradas.length > 0 ? visiveisFiltradas : todas
     const valores = visiveis.map((a) => a[campo])
-    let minimo = Math.min(...valores)
-    let maximo = Math.max(...valores)
+    const maximoDados = Math.max(...valores)
 
-    if (maximo - minimo < 1e-9) {
-      const folga = Math.abs(maximo) || 1
-      minimo -= folga / 2
-      maximo += folga / 2
+    if (yBase !== undefined) {
+      // Escala em 0–yBase: só cresce (por múltiplos de passoY) quando os dados ultrapassam yBase.
+      const passo = passoY ?? 1
+      eixoYMin = 0
+      eixoYMax = Math.max(yBase, Math.ceil(maximoDados / passo) * passo)
     } else {
-      const folga = (maximo - minimo) * 0.1
-      minimo -= folga
-      maximo += folga
-    }
+      let minimo = Math.min(...valores)
+      let maximo = maximoDados
 
-    eixoYMin = minimo
-    eixoYMax = maximo
+      if (maximo - minimo < 1e-9) {
+        const folga = Math.abs(maximo) || 1
+        minimo -= folga / 2
+        maximo += folga / 2
+      } else {
+        const folga = (maximo - minimo) * 0.1
+        minimo -= folga
+        maximo += folga
+      }
+
+      eixoYMin = minimo
+      eixoYMax = maximo
+    }
   }
 
   const intervaloX = tMax - tMin || 1
@@ -159,8 +170,7 @@ export function GraficoLinhas({ lidar, zed, campo, unidade, eixoY, yMin, yMax, p
       ))
   }
 
-  const ticksY =
-    escalaFixa && passoY !== undefined ? ticksPorPasso(eixoYMin, eixoYMax, passoY) : ticks(eixoYMin, eixoYMax)
+  const ticksY = passoY !== undefined ? ticksPorPasso(eixoYMin, eixoYMax, passoY) : ticks(eixoYMin, eixoYMax)
   const ticksX = janelaS !== undefined ? segundosInteiros(tMin, tMax) : ticks(tMin, tMax)
   const pontosLidar = desenhadas(lidar)
   const pontosZed = zed ? desenhadas(zed) : []
@@ -197,7 +207,7 @@ export function GraficoLinhas({ lidar, zed, campo, unidade, eixoY, yMin, yMax, p
               y2={y(valor)}
             />
             <text className="grafico-rotulo" x={MARGEM.esquerda - 6} y={y(valor) + 3} textAnchor="end">
-              {escalaFixa ? valor.toFixed(0) : formatarEixo(valor)}
+              {passoY !== undefined ? valor.toFixed(0) : formatarEixo(valor)}
             </text>
           </g>
         ))}
