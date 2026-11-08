@@ -70,6 +70,7 @@ class ZedSub:
         self.lista_temp = []
         self.t0 = None #inicializar t0 em cima pois o alinhamento é composto por várias partes do programa.
         self.ultimo_frame = None
+        self.ultimo_frame_depth = None
         self.numero_tentativa = 1
 
         # Tarefa de fundo para não bloquear o input() da thread principal
@@ -80,6 +81,7 @@ class ZedSub:
         # Definir os paremetros que vao ler a profundidade e a imagem
         depth = sl.Mat()
         image = sl.Mat()
+        image_depth = sl.Mat()
         runtime_parameters = sl.RuntimeParameters()
 
         while self.running:
@@ -91,10 +93,20 @@ class ZedSub:
                 #incializar a cópia do frame fora do with lock. Mais rápido do que se for dentro.
                 frame_copia = frame.copy()
                 #criando um self.lock novo para não congelar com os if/elses todos.
-                with self.lock:
-                    #guardar o frame com cópia já feita, dentro do lock devido à partilha do array.
+                # with self.lock:
+                #     #guardar o frame com cópia já feita, dentro do lock devido à partilha do array.
+                #     self.ultimo_frame = frame_copia
+            
+                #Integrar o mesmo para imagem de profundidade
+                self.zed.retrieve_image(image_depth, sl.VIEW.DEPTH)
+                frame_depth = image_depth.get_data() 
+                frame_copia_depth = frame_depth.copy()
+
+                #criando um self.lock novo para não congelar com os if/elses todos.
+                #Lock vai fazer atribuir a cópia do frame RGB e de depth de uma vez só, para virem do mesmo **grab**. Se fossem separados uma thread veria frame novo e outro o antigo.
+                with self.lock: 
                     self.ultimo_frame = frame_copia
-                #Atenção ao time.sleep em baixo, não pode aftetar a imagem!! (Esta mensagem é temporária)
+                    self.ultimo_frame_depth = frame_copia_depth
 
             if self.a_gravar: #Se for verdadeiro
                 # 1 -> grab() -> se sucesso
@@ -289,6 +301,12 @@ class ZedSub:
     
     def get_ultimo_frame(self):
         return self.ultimo_frame
+    
+    #getter do depth separado(situação recomendada), e sem lock, pois o _read_loop nunca altera depois de a guardar.
+    def get_ultimo_frame_depth(self):
+        return self.ultimo_frame_depth
+    #No entanto se o getter tiver de devolver como um par consistente (ou ao mesmo tempo). Aí teria de usar um lock.
+
 
 # def main():
 #     try:

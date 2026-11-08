@@ -195,9 +195,15 @@ async def emissor(app):
             mensagens = []
 
             frame = orq.zed.get_ultimo_frame()
+            frame_depth = orq.zed.get_ultimo_frame_depth()
             if frame is not None:              # None até a câmara entregar o 1.º frame
                 imagem = await asyncio.to_thread(codificar_frame, frame)
                 mensagens.append({"tipo": "camara", "format": FORMATO_IMAGEM, "imagem_base64": imagem})
+            
+            #Para a imagem de profundidade
+            if frame_depth is not None:              # None até a câmara entregar o 1.º frame
+                imagem_depth = await asyncio.to_thread(codificar_frame, frame_depth)
+                mensagens.append({"tipo": "camara_profundidade", "format": FORMATO_IMAGEM, "imagem_base64": imagem_depth})
 
             if orq.estado == "a_gravar":
                 for tipo, sub in (("lidar", orq.lidar), ("zed", orq.zed)):
