@@ -59,33 +59,6 @@ export function GraficoLinhas({ lidar, zed, campo, unidade, eixoY, yMin, yMax, p
     return <div className="grafico-vazio">Sem dados</div>
   }
 
-  // Eixo Y: com limites explícitos não se olha para os dados.
-  const escalaFixa = yMin !== undefined && yMax !== undefined
-  let eixoYMin: number
-  let eixoYMax: number
-
-  if (escalaFixa) {
-    eixoYMin = yMin
-    eixoYMax = yMax
-  } else {
-    const valores = todas.map((a) => a[campo])
-    let minimo = Math.min(...valores)
-    let maximo = Math.max(...valores)
-
-    if (maximo - minimo < 1e-9) {
-      const folga = Math.abs(maximo) || 1
-      minimo -= folga / 2
-      maximo += folga / 2
-    } else {
-      const folga = (maximo - minimo) * 0.1
-      minimo -= folga
-      maximo += folga
-    }
-
-    eixoYMin = minimo
-    eixoYMax = maximo
-  }
-
   // Eixo X: com janela, o eixo segue a última amostra LiDAR e só desliza depois de a preencher.
   let tMin: number
   let tMax: number
@@ -101,6 +74,36 @@ export function GraficoLinhas({ lidar, zed, campo, unidade, eixoY, yMin, yMax, p
     const semIntervalo = tMaxDados - tMinDados < 1e-9
     tMin = semIntervalo ? tMinDados - 0.5 : tMinDados
     tMax = semIntervalo ? tMaxDados + 0.5 : tMaxDados
+  }
+
+  // Eixo Y: com limites explícitos não se olha para os dados.
+  const escalaFixa = yMin !== undefined && yMax !== undefined
+  let eixoYMin: number
+  let eixoYMax: number
+
+  if (escalaFixa) {
+    eixoYMin = yMin
+    eixoYMax = yMax
+  } else {
+    // Com janela, a escala automática olha só para as amostras visíveis.
+    const visiveisFiltradas = janelaS !== undefined ? todas.filter((a) => a.t_s >= tMin) : todas
+    const visiveis = visiveisFiltradas.length > 0 ? visiveisFiltradas : todas
+    const valores = visiveis.map((a) => a[campo])
+    let minimo = Math.min(...valores)
+    let maximo = Math.max(...valores)
+
+    if (maximo - minimo < 1e-9) {
+      const folga = Math.abs(maximo) || 1
+      minimo -= folga / 2
+      maximo += folga / 2
+    } else {
+      const folga = (maximo - minimo) * 0.1
+      minimo -= folga
+      maximo += folga
+    }
+
+    eixoYMin = minimo
+    eixoYMax = maximo
   }
 
   const intervaloX = tMax - tMin || 1

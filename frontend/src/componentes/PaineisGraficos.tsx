@@ -81,6 +81,7 @@ export function ComparacaoPainel({ series }: { series: Series }) {
             campo="distancia_m"
             unidade="m"
             eixoY="Distância (m)"
+            janelaS={JANELA_S}
           />
         </div>
 
