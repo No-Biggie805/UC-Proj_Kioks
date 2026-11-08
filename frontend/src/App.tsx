@@ -11,7 +11,9 @@ import { ResultadosTempoRealPainel } from './componentes/ResultadosTempoRealPain
 
 export default function App() {
   const imagemRef = useRef<HTMLImageElement | null>(null)
-  const { ligacao, estado, resultado, series, temImagem, enviar } = useServidor(imagemRef)
+  const profundidadeRef = useRef<HTMLImageElement | null>(null)
+  const { ligacao, estado, resultado, series, temImagem, temImagemProfundidade, enviar } =
+    useServidor(imagemRef, profundidadeRef)
 
   const ultimaLidar = series.lidar[series.lidar.length - 1]
   // Os botões só ativam com ligação aberta E com um `estado` recebido do servidor.
@@ -29,9 +31,15 @@ export default function App() {
           </div>
 
           <div className="span-3">
-            <Painel titulo="Câmara ZED — Mapa de profundidade">
-              <PorImplementar nota="Chega da ZED" />
-            </Painel>
+            <CamaraPainel
+              titulo="Câmara ZED — Mapa de profundidade"
+              alt="Mapa de profundidade da câmara ZED"
+              textoVazio="Sem imagem de profundidade"
+              etiqueta={null}
+              imagemRef={profundidadeRef}
+              temImagem={temImagemProfundidade}
+              ligado={ligacao === 'ligada'}
+            />
           </div>
 
           <div className="span-3">
