@@ -18,6 +18,7 @@ import math
 import csv
 import pyzed.sl as sl
 import numpy as np
+import statistics
 
 """
 ALTERAÇÕES DO BLOCO C -- A partir do bloco C o código irá tomar um rumo diferente. Aqui irá ser aplicado o uso de
@@ -30,8 +31,10 @@ Para tal temos isto então estruturado da seguinte forma:
     -fechar: função para exit do programa
 """
 class GravadorZed:
+    JANELA_DESCARTE_S = 1.5
 
-    def __init__(self, camera_resolution=sl.RESOLUTION.HD720, fps=60):
+    def __init__(self, camera_resolution=sl.RESOLUTION.HD720, fps=60, usar_body_tracking=False):
+        #usar_body_tracking, criado como um terceiro parâmetro e desaparece quando __init__ termina.
         self.zed = sl.Camera() 
         self.lock = threading.Lock()
 
@@ -62,7 +65,10 @@ class GravadorZed:
 
         self.running = True
         self.a_gravar = False
-        self.lista_temp = []
+        self.usar_body_tracking = usar_body_tracking #copia o que chegou seja True ou false.
+
+        self.lista_duracoes = [] #Introdução a uma lista de dicionários no **lugar das outras**
+        self.t0 = None
 
         self.numero_tentativa = 1
         
@@ -73,57 +79,73 @@ class GravadorZed:
     def _read_loop(self):
         runtime_parameters = sl.RuntimeParameters()
 
-        #1º: positional tracking
-        tracking_parameters = sl.PositionalTrackingParameters()
-        positional_status = self.zed.enable_positional_tracking(tracking_parameters)
-        if positional_status > sl.ERROR_CODE.SUCCESS:
-            print("Erro ao abrir parâmetros da posição")
-            return
+        if self.usar_body_tracking:
+            #1º: positional tracking
+            tracking_parameters = sl.PositionalTrackingParameters()
+            positional_status = self.zed.enable_positional_tracking(tracking_parameters)
+            if positional_status > sl.ERROR_CODE.SUCCESS:
+                print("Erro ao abrir parâmetros da posição:", positional_status)
+                return
 
-        #2º: Body tracking
-        body_params = sl.BodyTrackingParameters()
-        #exemplo ->body params: tem a classe BODY_TRACKING_MODEL e membro HUMAN_BODY_FAST
-        body_params.detection_model = sl.BODY_TRACKING_MODEL.HUMAN_BODY_FAST
-        body_params.body_format = sl.BODY_FORMAT.BODY_18
-        #Atribuir estado apesar de já ser atribuida, para ficar igual aos outros.
-        body_params.enable_tracking = True
-        body_enable_status = self.zed.enable_body_tracking(body_params)
-        if body_enable_status > sl.ERROR_CODE.SUCCESS:
-            print("Erro ao abrir body params")
-            return
+            #2º: Body tracking
+            body_params = sl.BodyTrackingParameters()
+            #exemplo ->body params: tem a classe BODY_TRACKING_MODEL e membro HUMAN_BODY_FAST
+            body_params.detection_model = sl.BODY_TRACKING_MODEL.HUMAN_BODY_FAST
+            body_params.body_format = sl.BODY_FORMAT.BODY_18
+            #Atribuir estado apesar de já ser atribuida, para ficar igual aos outros.
+            body_params.enable_tracking = True
+            body_enable_status = self.zed.enable_body_tracking(body_params)
+            if body_enable_status > sl.ERROR_CODE.SUCCESS:
+                print("Erro ao abrir body params")
+                return
 
         #Ativar body tracking
         bodies = sl.Bodies()
         body_runtime_parameters = sl.BodyTrackingRuntimeParameters()
         instante_anterior=None #Para FPS
+        grab_ms = None
+        retrieve_ms = None
 
         while self.running:
             if self.a_gravar: #Se for verdadeiro
-                #1 -> grab() -> se sucesso
-                # 2 - grab, busca valores para guardar no mapa e assim..
+                #contagem da duração de uma chamada. Neste caso o grab
+                t_antes_grab = time.perf_counter()
                 grab_status = self.zed.grab(runtime_parameters)
-                if (grab_status == sl.ERROR_CODE.SUCCESS):
-                    grab_body_status = self.zed.retrieve_bodies(bodies, body_runtime_parameters)
-                    
-                    #5) FPS
+                t_depois_grab = time.perf_counter()
+                grab_ms = (t_depois_grab - t_antes_grab)*1000 #x1000, por causa de passar para ms
+
+                if (grab_status == sl.ERROR_CODE.SUCCESS): #aka: "if_sucesso"
+                    #Conta o intervalo entre frames
+                    #Este vai mover para fora do usar_body_tracking, pois esse depende só com o que depende do body_tracking
                     instante_atual = time.perf_counter()
                     fps = None
                     if instante_anterior is not None:
-                        fps = 1/(instante_atual - instante_anterior)
+                        fps = 1/(instante_atual - instante_anterior) #vf=> instante_atual, vi=>instante_anterior
                     instante_anterior = instante_atual
-                    
-                    if grab_body_status == sl.ERROR_CODE.SUCCESS:
-                        n_corpos = len(bodies.body_list)
-                        if n_corpos > 0:
-                            primeiro_corpo = bodies.body_list[0]
-                            kp = primeiro_corpo.keypoint
-                            # n_keypoints = len(kp)
-                            # finitos = np.isfinite(kp)
-                            # linha_valida = finitos.all(axis=1)
-                            n_validos = np.isfinite(kp).all(axis=1).sum()
-                            print("num_corpos:", n_corpos, "id:", primeiro_corpo.id, "keypoints válidos:", n_validos, "FPS:", fps)
-                    else:
-                        print("Erro em retrieve bodies")                            
+
+                    if self.usar_body_tracking: #aka: if_flag
+                        #assim como no grab também vai contar a duração da chamada para o retrieve
+                        t_antes_retrive = time.perf_counter()
+                        grab_body_status = self.zed.retrieve_bodies(bodies, body_runtime_parameters)
+                        t_depois_retrieve = time.perf_counter()
+
+                        retrieve_ms = (t_depois_retrieve - t_antes_retrive) * 1000
+                        
+                        #Body status ou bodies
+                        if grab_body_status == sl.ERROR_CODE.SUCCESS:
+                            n_corpos = len(bodies.body_list)
+                            if n_corpos > 0:
+                                primeiro_corpo = bodies.body_list[0]
+                                kp = primeiro_corpo.keypoint
+                                # n_keypoints = len(kp)
+                                # finitos = np.isfinite(kp)
+                                # linha_valida = finitos.all(axis=1)
+                                n_validos = np.isfinite(kp).all(axis=1).sum()
+                                print("num_corpos:", n_corpos, "id:", primeiro_corpo.id, "keypoints válidos:", n_validos, "FPS:", fps)
+                        else:
+                            print("Erro em retrieve bodies")                            
+                    #append fora do if_flag, porque senão vai ser saltado por inteiro quando o mesmo é falso.
+                    self.lista_duracoes.append({"tg": grab_ms, "tr":retrieve_ms, "t":t_depois_grab})
                 else:
                     print(f"Erro no grab(): {repr(grab_status)}")
             else:
@@ -133,6 +155,8 @@ class GravadorZed:
     def alternar_gravacao(self):
         """Chamado pela thread principal a cada Enter. Faz o toggle."""
         if not self.a_gravar:
+            self.lista_duracoes.clear()
+            self.t0 = time.perf_counter() 
             #Aqui o modo de execução da coleção de dados do sensor é acionada
             #Se quisesse limpar as listas da memória seria aqui, o mesmo ao menos acontece no _guardar_csv_tentativa
             self.a_gravar = True
@@ -140,12 +164,40 @@ class GravadorZed:
         else:
             self.a_gravar = False
             print("Thread de gravação à memória parado, a iniciar gravação para ficheiro")
+            #aplicar dados estatísticos
+            #1 — Média e quantiz:
+           
+            d = self.lista_duracoes
+            #Isto devolve as informações, quanto tempo demoraram os primeiros intervalo do grab, retrieve e do grab a partir de t0
+            if d:
+                print("ler durações:", len(d), "primeiro do dict:", self.lista_duracoes[0])
+            #calcular o instante do frame (segundos que passaram desde o início da gravação até ao momento em que o grab devolve o frame)
+            
+            for i in range(0, len(d)):
+                idade = d[i]["t"] - self.t0
+                if idade >= self.JANELA_DESCARTE_S:
+                    #TEMPORARIO: isto verifica o a idade da janela, diferença entre o i atual e i-1 da idade tem de ser~=16.6ms
+                    # idade_anterior = d[i-1]["t"] - self.t0
+                    # print(f"i={i} | idade do frame i: {idade:.4f} s | idade do frame i-1: {idade_anterior:.4f} s")
+                    
+                    #slice normal dos valores que não são desejados até 1s. Está movido para dentro, para não correr sempre
+                    del self.lista_duracoes[0:i] #do inicio da lista até onde i pára no break. (que é i que ficou parado quando chegou ~= 1s da janela)
+                    break
+            else:
+                #Isto proteje de casos quando o break é ignorado, idade não vai ser >1s. A lista esvazia
+                del self.lista_duracoes[0:len(self.lista_duracoes)] #i+1 ou len - 1, determinando o tamanho da lista, para apagar tudo
+            
+
+            #...Para o resultado estar direito len(self.lista_duracoes), deve ter de mostrar uma diferença de 60
+            print("ler durações, depois do grab do frame:", len(self.lista_duracoes))
     
     def fechar(self):
         self.running = False
         self.thread.join(timeout=1) #Espera 1s pela thread
-        self.zed.disable_positional_tracking()
-        self.zed.disable_body_tracking()
+
+        if self.usar_body_tracking:
+            self.zed.disable_positional_tracking()
+            self.zed.disable_body_tracking()
         #ainda falta ajustar o guardar para quando sai do programa
         self.zed.close()
         # 4. Fechar de forma limpa
@@ -207,7 +259,8 @@ class GravadorZed:
 
 def main():
     try:    
-        gravador = GravadorZed()
+        #O estado da flag do usar_body_tracking aciona assim que começamos a correr o programa. 
+        gravador = GravadorZed(usar_body_tracking=True) 
     except ConnectionError as e:
         print(f"Não foi possivel inicializar: {e}")
         return

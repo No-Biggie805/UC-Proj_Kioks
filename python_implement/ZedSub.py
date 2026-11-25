@@ -213,6 +213,7 @@ class ZedSub:
     def guardar_csv(self):
         self._guardar_csv_tentativa()
 
+    #Emitir as amostras para o WS, função a correr em tempo real.
     def get_ultima_amostra(self):
         with self.lock:
             if not self.lista_temp:
@@ -221,6 +222,7 @@ class ZedSub:
             return {"t_s": u["t"] - self.t0, "distancia_m": u["y"],
                     "velocidade": u["v"], "aceleracao": u["a"]}
 
+    #Para guardar as amostras que estão dentro da memória
     def get_amostras(self):
         with self.lock:
             return list(self.lista_temp)
