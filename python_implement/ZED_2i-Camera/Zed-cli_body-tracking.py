@@ -164,9 +164,7 @@ class GravadorZed:
         else:
             self.a_gravar = False
             print("Thread de gravação à memória parado, a iniciar gravação para ficheiro")
-            #aplicar dados estatísticos
-            #1 — Média e quantiz:
-           
+
             d = self.lista_duracoes
             #Isto devolve as informações, quanto tempo demoraram os primeiros intervalo do grab, retrieve e do grab a partir de t0
             if d:
@@ -180,20 +178,42 @@ class GravadorZed:
                     # idade_anterior = d[i-1]["t"] - self.t0
                     # print(f"i={i} | idade do frame i: {idade:.4f} s | idade do frame i-1: {idade_anterior:.4f} s")
                     
-                    #slice normal dos valores que não são desejados até 1s. Está movido para dentro, para não correr sempre
-                    del self.lista_duracoes[0:i] #do inicio da lista até onde i pára no break. (que é i que ficou parado quando chegou ~= 1s da janela)
+                    #slice normal dos valores que não são desejados até 1.5s. Está movido para dentro, para não correr sempre
+                    del self.lista_duracoes[0:i] #do inicio da lista até onde i pára no break. (que é i que ficou parado quando chegou ~= 1.5s da janela)
                     break
             else:
-                #Isto proteje de casos quando o break é ignorado, idade não vai ser >1s. A lista esvazia
+                #Isto proteje de casos quando o break é ignorado, idade não vai ser >1.5s. A lista esvazia
                 del self.lista_duracoes[0:len(self.lista_duracoes)] #i+1 ou len - 1, determinando o tamanho da lista, para apagar tudo
             
 
             #...Para o resultado estar direito len(self.lista_duracoes), deve ter de mostrar uma diferença de 60
             print("ler durações, depois do grab do frame:", len(self.lista_duracoes))
+
+            #Pré-verificação de dados (passo 8 — body_tracking). Para perceber se lista_decisoes está ou não vazia e flag a falso
+            print(f"Condição do atributo usar_body_tracking={self.usar_body_tracking} | frames usados: {len(self.lista_duracoes)}")
+
+            #aplicar dados estatísticos
+            #1 — Média e quantiz do grab:
+            #Fazendo um list comprehension
+            tg_valores = [duracao["tg"] for duracao in self.lista_duracoes]
+            if tg_valores:
+                media_tg = statistics.mean(tg_valores) #valor ideal frame_novo=1000/60 ~= 16.7ms
+                maximo_tg = max(tg_valores) #aqui o máx irá ser o valor mais lento
+                p95_tg = np.percentile(tg_valores, 95)
+                print(f"Dados tg — Média do tempo: {media_tg} ms | Máximo(valor mais lento): {maximo_tg} ms | percentil_95: {p95_tg}")
+                
+            #Fazendo o mesmo para o retrieve bodies:
+            tr_valores = [duracao["tr"] for duracao in self.lista_duracoes if duracao["tr"] is not None] #Futuramente voltar o if duracao["tr"] is not None, para quando usar_body_tracking=False, em mais situações
+            if tr_valores: #Esta cena deu dor de cabeça para os dois casos, tem de provar que tg_valores existe senão se for "is not None", vai ainda ter casos que falha
+                media_tr = statistics.mean(tr_valores) #valor ideal frame_novo=1000/60 ~= 16.7ms
+                maximo_tr = max(tr_valores) #aqui o máx irá ser o valor mais lento
+                p95_tr = np.percentile(tr_valores, 95)
+                print(f"Dados tr — Média do tempo: {media_tr} ms | Máximo(valor mais lento): {maximo_tr} ms | percentil_95: {p95_tr}")
+
     
     def fechar(self):
         self.running = False
-        self.thread.join(timeout=1) #Espera 1s pela thread
+        self.thread.join(timeout=1) #Espera 1.5s pela thread
 
         if self.usar_body_tracking:
             self.zed.disable_positional_tracking()
